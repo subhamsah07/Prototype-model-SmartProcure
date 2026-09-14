@@ -39,7 +39,27 @@ export const BookSlot: React.FC = () => {
   const { profile: authProfile, user, isAuthenticated } = useAuth();
   const [crops, setCrops] = React.useState<Crop[]>([]);
   const [selectedCropName, setSelectedCropName] = React.useState<CropName>('Wheat');
-  const [activeRatePerQuintal, setActiveRatePerQuintal] = React.useState<number>(2425);
+
+  // Consolidated farmer profile
+  const farmerState = (authProfile?.state || user?.user_metadata?.state || MOCK_FARMER.state) as IndianState;
+  const farmerName = authProfile?.fullName || (user?.user_metadata?.fullName as string) || MOCK_FARMER.fullName;
+  const farmerMobile = authProfile?.mobileNumber || (user?.user_metadata?.mobileNumber as string) || MOCK_FARMER.mobileNumber;
+  const farmerDistrict = authProfile?.district || (user?.user_metadata?.district as string) || MOCK_FARMER.district;
+
+  // Real-time map of cropName -> state MSP rate configured by admin
+  const [cropPrices, setCropPrices] = React.useState<Record<string, number>>(() => {
+    const map: Record<string, number> = {};
+    const defaultCrops = ['Wheat', 'Paddy', 'Maize', 'Rice', 'Mustard'];
+    defaultCrops.forEach((name) => {
+      map[name] = cropService.getCropPriceSync(name, farmerState);
+    });
+    return map;
+  });
+
+  // The active MSP rate for the currently selected crop - strictly synchronized with admin pricing
+  const activeRatePerQuintal =
+    cropPrices[selectedCropName] ??
+    cropService.getCropPriceSync(selectedCropName, farmerState);
 
   const [districts, setDistricts] = React.useState<District[]>([]);
   const [selectedDistrict, setSelectedDistrict] = React.useState<string>(authProfile?.district || 'all');
@@ -65,18 +85,12 @@ export const BookSlot: React.FC = () => {
   const [confirmedBooking, setConfirmedBooking] = React.useState<ProcurementBooking | null>(null);
   const [tokenCopied, setTokenCopied] = React.useState(false);
 
-  // Consolidated farmer profile
-  const farmerState = (authProfile?.state || user?.user_metadata?.state || MOCK_FARMER.state) as IndianState;
-  const farmerName = authProfile?.fullName || (user?.user_metadata?.fullName as string) || MOCK_FARMER.fullName;
-  const farmerMobile = authProfile?.mobileNumber || (user?.user_metadata?.mobileNumber as string) || MOCK_FARMER.mobileNumber;
-  const farmerDistrict = authProfile?.district || (user?.user_metadata?.district as string) || MOCK_FARMER.district;
-
   // 1. Fetch real crops from Supabase
   React.useEffect(() => {
     let active = true;
     async function fetchCrops() {
       try {
-        const loadedCrops = await cropService.getCrops();
+        const loadedCrops = await cropService.getCrops(farmerState);
         if (active && loadedCrops.length > 0) {
           setCrops(loadedCrops);
           setSelectedCropName(loadedCrops[0].name as CropName);
@@ -89,28 +103,35 @@ export const BookSlot: React.FC = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [farmerState]);
 
-  // 2. Fetch state-specific crop price when selected crop or state changes
+  // 2. Fetch state-specific MSP prices decided by admin for all crops
   React.useEffect(() => {
     let active = true;
-    async function fetchPrice() {
+    async function fetchPrices() {
       try {
-        const rate = await cropService.getCropPriceByState(selectedCropName, farmerState);
-        if (active) {
-          setActiveRatePerQuintal(rate);
+        const statePrices = await cropService.getActivePricesForState(farmerState);
+        if (active && statePrices.length > 0) {
+          const map: Record<string, number> = {};
+          statePrices.forEach((p) => {
+            map[p.cropName] = p.ratePerQuintal;
+          });
+          setCropPrices((prev) => ({ ...prev, ...map }));
         }
       } catch (err) {
-        console.warn('Could not load state crop price:', err);
+        console.warn('Could not load state crop prices:', err);
       }
     }
-    fetchPrice();
+    fetchPrices();
 
     // Listen for state admin crop price updates in real-time
     const handlePriceUpdate = (e: any) => {
       const detail = e.detail;
-      if (detail && detail.cropName === selectedCropName && detail.state === farmerState) {
-        setActiveRatePerQuintal(detail.newPrice);
+      if (detail && detail.state === farmerState && detail.cropName) {
+        setCropPrices((prev) => ({
+          ...prev,
+          [detail.cropName]: detail.newPrice,
+        }));
       }
     };
     window.addEventListener('smartprocure_price_updated', handlePriceUpdate);
@@ -119,7 +140,7 @@ export const BookSlot: React.FC = () => {
       active = false;
       window.removeEventListener('smartprocure_price_updated', handlePriceUpdate);
     };
-  }, [selectedCropName, farmerState]);
+  }, [farmerState]);
 
   // 3. Fetch districts for farmer state
   React.useEffect(() => {
@@ -593,7 +614,7 @@ export const BookSlot: React.FC = () => {
                       <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
                         <span className="text-slate-400">MSP Rate</span>
                         <span className="font-bold text-emerald-800">
-                          ₹{isSelected ? activeRatePerQuintal : crop.configuredRatePerQuintal} / Q
+                          ₹{cropPrices[crop.name] ?? crop.configuredRatePerQuintal} / Q
                         </span>
                       </div>
                     </button>

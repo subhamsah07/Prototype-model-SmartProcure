@@ -655,6 +655,14 @@ export const AdminRequests: React.FC = () => {
                             );
                           }
 
+                          if (req.bookingStatus === 'cancelled' || req.workflowStatus === 'cancelled' || req.workflowStatus === 'rejected') {
+                            return (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-100 text-rose-800 border border-rose-300">
+                                Failed (Quality Not Approved)
+                              </span>
+                            );
+                          }
+
                           return (
                             <span
                               className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
@@ -662,8 +670,6 @@ export const AdminRequests: React.FC = () => {
                                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                   : req.workflowStatus === 'document_verification' || req.workflowStatus === 'qr_verified'
                                   ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                  : req.bookingStatus === 'cancelled'
-                                  ? 'bg-red-50 text-red-700 border border-red-200'
                                   : 'bg-amber-50 text-amber-700 border border-amber-200'
                               }`}
                             >

@@ -40,6 +40,7 @@ import {
   Sparkles,
   Download,
   FileText,
+  Bell,
 } from 'lucide-react';
 import { downloadProcurementReceiptPdf } from '../../utils/receiptPdfGenerator';
 
@@ -76,9 +77,12 @@ export const AdminRequestDetail: React.FC = () => {
   const [verifiedRate, setVerifiedRate] = React.useState<number | ''>('');
   const [weighbridgeNotes, setWeighbridgeNotes] = React.useState('');
 
-  // Crop Quality State (Good: 0%, Bad: 15%, Very Bad: 30% deduction)
-  const [qualityGrade, setQualityGrade] = React.useState<'good' | 'bad' | 'very_bad'>('good');
+  // Crop Quality State: 'approved' (According to FAQ rules) vs 'not_approved'
+  const [qualityStatus, setQualityStatus] = React.useState<'approved' | 'not_approved'>('approved');
   const [qualityNotes, setQualityNotes] = React.useState('');
+  const [qualityCancellationReason, setQualityCancellationReason] = React.useState(
+    'Produce does not meet Fair Average Quality (FAQ) standards. High impurities or moisture exceeding official Mandi limits.'
+  );
 
   // Manual QR Override / Bypass State
   const [manualCodeInput, setManualCodeInput] = React.useState('');
@@ -179,6 +183,15 @@ export const AdminRequestDetail: React.FC = () => {
     }
     const idx = workflowSteps.findIndex((s) => s.status === request.workflowStatus);
     return idx === -1 ? 0 : idx;
+  }, [request]);
+
+  // Check if procurement has failed (cancelled or rejected due to quality)
+  const isProcurementFailed = React.useMemo(() => {
+    return (
+      request?.workflowStatus === 'cancelled' ||
+      request?.workflowStatus === 'rejected' ||
+      request?.bookingStatus === 'cancelled'
+    );
   }, [request]);
 
   // Check if procurement has already started
@@ -571,21 +584,13 @@ export const AdminRequestDetail: React.FC = () => {
     const q = Number(givenWeight);
     const r = Number(verifiedRate);
     const gross = q * r;
-    const deductionPct = qualityGrade === 'good' ? 0 : qualityGrade === 'bad' ? 15 : 30;
-    const finalVal = Math.round(gross * (1 - deductionPct / 100));
-    const effectiveRate = Math.round(r * (1 - deductionPct / 100));
+    const finalVal = gross;
 
-    const gradeLabel =
-      qualityGrade === 'good'
-        ? 'Good Quality (100% Deserving MSP, 0% deduction)'
-        : qualityGrade === 'bad'
-        ? 'Bad Quality (15% statutory deduction)'
-        : 'Very Bad Quality (30% statutory deduction)';
+    const gradeLabel = 'Quality Approved (According to FAQ rules)';
 
     const combinedNotes = [
       weighbridgeNotes || `Weighed: ${q} Qtl (Claimed: ${request.quantityQuintals} Qtl) at MSP ₹${r}/Qtl`,
-      `Quality Grade: ${gradeLabel}`,
-      `Statutory deduction: -${deductionPct}%`,
+      `Quality: ${gradeLabel}`,
       qualityNotes,
     ]
       .filter(Boolean)
@@ -595,9 +600,9 @@ export const AdminRequestDetail: React.FC = () => {
       bookingId: request.id,
       newStatus: 'procurement_completed',
       verifiedQuantity: q,
-      verifiedRate: effectiveRate,
-      qualityGrade,
-      qualityDeductionPercent: deductionPct,
+      verifiedRate: r,
+      qualityGrade: 'approved',
+      qualityDeductionPercent: 0,
       finalValue: finalVal,
       notes: combinedNotes,
     });
@@ -622,26 +627,19 @@ export const AdminRequestDetail: React.FC = () => {
     const q = Number(givenWeight || request.verifiedQuantity || request.quantityQuintals);
     const r = Number(verifiedRate || request.verifiedRate || request.ratePerQuintal);
     const gross = q * r;
-    const deductionPct = qualityGrade === 'good' ? 0 : qualityGrade === 'bad' ? 15 : 30;
-    const finalVal = Math.round(gross * (1 - deductionPct / 100));
-    const effectiveRate = Math.round(r * (1 - deductionPct / 100));
+    const finalVal = gross;
 
-    const gradeLabel =
-      qualityGrade === 'good'
-        ? 'Good Quality (100% Deserving MSP, 0% deduction)'
-        : qualityGrade === 'bad'
-        ? 'Bad Quality (15% statutory deduction)'
-        : 'Very Bad Quality (30% statutory deduction)';
+    const gradeLabel = 'Quality Approved (According to FAQ rules)';
 
     const ok = await adminService.advanceWorkflowStatus({
       bookingId: request.id,
       newStatus: 'procurement_completed',
       verifiedQuantity: q,
-      verifiedRate: effectiveRate,
-      qualityGrade,
-      qualityDeductionPercent: deductionPct,
+      verifiedRate: r,
+      qualityGrade: 'approved',
+      qualityDeductionPercent: 0,
       finalValue: finalVal,
-      notes: qualityNotes || `Crop Quality Check: ${gradeLabel}. Gross: ₹${gross.toLocaleString('en-IN')}, Deduction: -${deductionPct}%, Final Certified Payout: ₹${finalVal.toLocaleString('en-IN')}`,
+      notes: qualityNotes || `Crop Quality Check: ${gradeLabel}. Gross Payout: ₹${finalVal.toLocaleString('en-IN')}`,
     });
 
     setAdvancing(false);
@@ -653,6 +651,33 @@ export const AdminRequestDetail: React.FC = () => {
       await loadDetails();
     } else {
       setStatusMessage({ type: 'error', text: 'Failed to record crop quality check.' });
+    }
+  };
+
+  const handleCancelProcurementForQuality = async () => {
+    if (!request) return;
+    setAdvancing(true);
+    setStatusMessage(null);
+
+    const reason =
+      qualityCancellationReason ||
+      qualityNotes ||
+      'Produce does not meet Fair Average Quality (FAQ) standards. High impurities or moisture exceeding official Mandi limits.';
+
+    const ok = await adminService.cancelProcurementDueToQuality({
+      bookingId: request.id,
+      reason,
+    });
+
+    setAdvancing(false);
+    if (ok) {
+      setStatusMessage({
+        type: 'error',
+        text: 'Procurement cancelled due to unapproved crop quality. Status updated to Failed and notification delivered to the farmer.',
+      });
+      await loadDetails();
+    } else {
+      setStatusMessage({ type: 'error', text: 'Failed to cancel procurement. Please try again.' });
     }
   };
 
@@ -793,14 +818,18 @@ export const AdminRequestDetail: React.FC = () => {
               </span>
               <span
                 className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                  request.workflowStatus === 'payment_completed'
+                  isProcurementFailed
+                    ? 'bg-rose-100 text-rose-800 border border-rose-300 font-bold'
+                    : request.workflowStatus === 'payment_completed'
                     ? 'bg-emerald-100 text-emerald-800'
                     : isProcurementStarted
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-amber-100 text-amber-800'
                 }`}
               >
-                {request.workflowStatus === 'payment_completed'
+                {isProcurementFailed
+                  ? 'FAILED (QUALITY NOT APPROVED)'
+                  : request.workflowStatus === 'payment_completed'
                   ? 'FULL PROCESS COMPLETED'
                   : isProcurementStarted
                   ? `IN PROGRESS (STEP ${currentStepIndex + 1})`
@@ -937,8 +966,14 @@ export const AdminRequestDetail: React.FC = () => {
             <span className="text-xs font-semibold text-slate-600">
               Active Checkpoint:
             </span>
-            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-              {workflowSteps[currentStepIndex]?.label}
+            <span
+              className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                isProcurementFailed
+                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                  : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+              }`}
+            >
+              {isProcurementFailed ? 'Failed (Quality Not Approved)' : workflowSteps[currentStepIndex]?.label}
             </span>
           </div>
         </div>
@@ -946,15 +981,18 @@ export const AdminRequestDetail: React.FC = () => {
         {/* Horizontal Step Indicator */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           {workflowSteps.map((step, idx) => {
-            const isCompleted = idx < currentStepIndex || request.workflowStatus === 'payment_completed';
-            const isCurrent = idx === currentStepIndex && request.workflowStatus !== 'payment_completed';
+            const isFailedStep = isProcurementFailed && idx === 3;
+            const isCompleted = !isProcurementFailed && (idx < currentStepIndex || request.workflowStatus === 'payment_completed');
+            const isCurrent = !isProcurementFailed && (idx === currentStepIndex && request.workflowStatus !== 'payment_completed');
             const Icon = step.icon;
 
             return (
               <div
                 key={step.status}
                 className={`p-3 rounded-xl border flex flex-col items-center text-center transition ${
-                  isCurrent
+                  isFailedStep
+                    ? 'border-rose-400 bg-rose-50 text-rose-900 shadow-xs ring-2 ring-rose-500/20'
+                    : isCurrent
                     ? 'border-emerald-500 bg-emerald-50/70 text-emerald-900 shadow-xs ring-2 ring-emerald-500/20'
                     : isCompleted
                     ? 'border-slate-200 bg-emerald-50/30 text-slate-800'
@@ -963,18 +1001,36 @@ export const AdminRequestDetail: React.FC = () => {
               >
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs mb-1.5 ${
-                    isCurrent
+                    isFailedStep
+                      ? 'bg-rose-600 text-white font-bold'
+                      : isCurrent
                       ? 'bg-emerald-600 text-white font-bold'
                       : isCompleted
                       ? 'bg-emerald-600 text-white'
                       : 'bg-slate-100 text-slate-400'
                   }`}
                 >
-                  {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
+                  {isFailedStep ? (
+                    <XCircle className="w-4 h-4" />
+                  ) : isCompleted ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Icon className="w-3.5 h-3.5" />
+                  )}
                 </div>
-                <span className="text-[11px] font-semibold leading-tight">{step.label}</span>
-                <span className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-wider">
-                  {isCompleted ? 'Completed' : isCurrent ? 'Active Now' : 'Pending'}
+                <span className="text-[11px] font-semibold leading-tight">
+                  {isFailedStep ? '4. Quality Not Approved' : step.label}
+                </span>
+                <span className="text-[9px] mt-1 uppercase font-bold tracking-wider">
+                  {isFailedStep ? (
+                    <span className="text-rose-700 font-bold">Failed</span>
+                  ) : isCompleted ? (
+                    'Completed'
+                  ) : isCurrent ? (
+                    'Active Now'
+                  ) : (
+                    'Pending'
+                  )}
                 </span>
               </div>
             );
@@ -1000,9 +1056,71 @@ export const AdminRequestDetail: React.FC = () => {
           </div>
 
           {/* ============================================================== */}
+          {/* FAILED STATE: PROCUREMENT CANCELLED (QUALITY NOT APPROVED)     */}
+          {/* ============================================================== */}
+          {isProcurementFailed && (
+            <div className="bg-white p-6 rounded-2xl border-2 border-rose-300 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                    <XCircle className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-base font-bold text-slate-900">Procurement Cancelled — Quality Not Approved</h4>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 uppercase">
+                        Status: Failed
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      This procurement transaction has been cancelled because the produce failed mandatory Fair Average Quality (FAQ) standards.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/admin/requests"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Requests</span>
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-slate-500 block">Farmer & Token:</span>
+                  <span className="text-sm font-bold text-slate-900">{request.farmerName}</span>
+                  <span className="font-mono text-slate-600 block mt-0.5">Token: {request.token}</span>
+                </div>
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-slate-500 block">Produce Inspected:</span>
+                  <span className="text-sm font-bold text-slate-900">{request.cropName}</span>
+                  <span className="text-slate-600 block mt-0.5">{request.quantityQuintals} Quintals (Claimed)</span>
+                </div>
+                <div className="p-3.5 bg-rose-50/70 rounded-xl border border-rose-200">
+                  <span className="text-rose-800 font-semibold block">Failure & Rejection Reason:</span>
+                  <span className="text-xs font-bold text-rose-900 block mt-0.5">
+                    {verificationRecords.find((v) => v.status === 'rejected')?.notes || request.notes || 'Produce did not meet Fair Average Quality (FAQ) standards.'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-slate-800">
+                  <Bell className="w-4 h-4 text-emerald-600" />
+                  <span>Farmer Notification Status</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed">
+                  An immediate alert message has been delivered to farmer <strong>{request.farmerName}</strong>'s dashboard informing them that the procurement was cancelled due to unapproved crop quality. Their status is marked as <strong>Failed</strong> and payment processing is halted.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
           {/* STEP 1: INITIAL STATE -> START PROCUREMENT BUTTON             */}
           {/* ============================================================== */}
-          {!isProcurementStarted && request.workflowStatus === 'booking' && (
+          {!isProcurementFailed && !isProcurementStarted && request.workflowStatus === 'booking' && (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
               <div className="flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
@@ -1067,7 +1185,7 @@ export const AdminRequestDetail: React.FC = () => {
           {/* ============================================================== */}
           {/* STEP 2: QR VERIFICATION                                       */}
           {/* ============================================================== */}
-          {(request.workflowStatus === 'booking' && isProcurementStarted || request.workflowStatus === 'qr_verified') && (
+          {!isProcurementFailed && ((request.workflowStatus === 'booking' && isProcurementStarted) || request.workflowStatus === 'qr_verified') && (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                 <div>
@@ -1378,7 +1496,7 @@ export const AdminRequestDetail: React.FC = () => {
           {/* ============================================================== */}
           {/* STEP 3: DOCUMENT VERIFICATION                                 */}
           {/* ============================================================== */}
-          {request.workflowStatus === 'document_verification' && (
+          {!isProcurementFailed && request.workflowStatus === 'document_verification' && (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-5">
               <div>
                 <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -1474,7 +1592,7 @@ export const AdminRequestDetail: React.FC = () => {
           {/* ============================================================== */}
           {/* STEP 4: WEIGHT & RATE VERIFICATION                            */}
           {/* ============================================================== */}
-          {request.workflowStatus === 'weight_rate_verification' && (
+          {!isProcurementFailed && request.workflowStatus === 'weight_rate_verification' && (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-5">
               <div>
                 <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -1543,219 +1661,20 @@ export const AdminRequestDetail: React.FC = () => {
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Crop Quality Inspection & Price Deduction Grading *
+                    Crop Quality Verification (FAQ Standards) *
                   </label>
                   <span className="text-[11px] font-semibold text-slate-500">
-                    Fair Average Quality (FAQ) Standard
+                    Mandatory Mandi Inspection
                   </span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                  {/* Good Quality */}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Option 1: Quality Approved (According to FAQ rules) */}
                   <div
-                    onClick={() => setQualityGrade('good')}
-                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition relative flex flex-col justify-between ${
-                      qualityGrade === 'good'
-                        ? 'border-emerald-600 bg-emerald-50/80 shadow-xs ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-600 text-white">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Good Quality</span>
-                        </span>
-                        <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
-                          0% Deduction
-                        </span>
-                      </div>
-                      <h6 className="text-xs font-bold text-slate-900">FAQ Compliant Grain</h6>
-                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                        Deserving claimed MSP. Clean grains, moisture ≤ 12%.
-                      </p>
-                    </div>
-                    <div className="mt-2.5 pt-2 border-t border-emerald-200/60 text-xs font-semibold text-emerald-900 flex justify-between">
-                      <span>Effective Rate:</span>
-                      <strong className="font-mono">100% MSP</strong>
-                    </div>
-                  </div>
-
-                  {/* Bad Quality */}
-                  <div
-                    onClick={() => setQualityGrade('bad')}
-                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition relative flex flex-col justify-between ${
-                      qualityGrade === 'bad'
-                        ? 'border-amber-600 bg-amber-50/80 shadow-xs ring-2 ring-amber-500/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-600 text-white">
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          <span>Bad Quality</span>
-                        </span>
-                        <span className="text-xs font-bold text-amber-900 bg-amber-200 px-2 py-0.5 rounded">
-                          -15% Deduction
-                        </span>
-                      </div>
-                      <h6 className="text-xs font-bold text-slate-900">Substandard Grain</h6>
-                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                        Minor foreign matter or elevated moisture (12-14%).
-                      </p>
-                    </div>
-                    <div className="mt-2.5 pt-2 border-t border-amber-200/60 text-xs font-semibold text-amber-900 flex justify-between">
-                      <span>Effective Rate:</span>
-                      <strong className="font-mono">85% of MSP</strong>
-                    </div>
-                  </div>
-
-                  {/* Very Bad Quality */}
-                  <div
-                    onClick={() => setQualityGrade('very_bad')}
-                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition relative flex flex-col justify-between ${
-                      qualityGrade === 'very_bad'
-                        ? 'border-rose-600 bg-rose-50/80 shadow-xs ring-2 ring-rose-500/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-600 text-white">
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>Very Bad Quality</span>
-                        </span>
-                        <span className="text-xs font-bold text-rose-900 bg-rose-200 px-2 py-0.5 rounded">
-                          -30% Deduction
-                        </span>
-                      </div>
-                      <h6 className="text-xs font-bold text-slate-900">Heavily Degraded Crop</h6>
-                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                        High impurities, discoloration, or moisture &gt; 14%.
-                      </p>
-                    </div>
-                    <div className="mt-2.5 pt-2 border-t border-rose-200/60 text-xs font-semibold text-rose-900 flex justify-between">
-                      <span>Effective Rate:</span>
-                      <strong className="font-mono">70% of MSP</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dynamic Live Quality & Weighment Calculation Card */}
-              {(() => {
-                const q = Number(givenWeight || request.verifiedQuantity || request.quantityQuintals);
-                const r = Number(verifiedRate || request.verifiedRate || request.ratePerQuintal);
-                const gross = q * r;
-                const deductionPct = qualityGrade === 'good' ? 0 : qualityGrade === 'bad' ? 15 : 30;
-                const deductionAmount = Math.round((gross * deductionPct) / 100);
-                const finalPayable = gross - deductionAmount;
-
-                return (
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-200">
-                      <span className="font-bold text-slate-700 uppercase tracking-wider">
-                        Certified Payout Breakdown ({q} Quintals @ ₹{r}/Qtl)
-                      </span>
-                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                        qualityGrade === 'good' ? 'bg-emerald-100 text-emerald-800' : qualityGrade === 'bad' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
-                      }`}>
-                        Grade: {qualityGrade.replace('_', ' ').toUpperCase()} (-{deductionPct}%)
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                      <div className="p-2.5 bg-white rounded-lg border border-slate-200">
-                        <span className="text-slate-500 block text-[11px]">Gross Benchmark:</span>
-                        <span className="text-sm font-bold text-slate-900 font-mono">
-                          ₹{gross.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="p-2.5 bg-white rounded-lg border border-slate-200">
-                        <span className="text-slate-500 block text-[11px]">Given Weight:</span>
-                        <span className="text-sm font-bold text-slate-800">
-                          {q} Quintals
-                        </span>
-                      </div>
-                      <div className="p-2.5 bg-white rounded-lg border border-slate-200">
-                        <span className="text-slate-500 block text-[11px]">Quality Deduction:</span>
-                        <span className="text-sm font-bold text-rose-600 font-mono">
-                          -{deductionPct}% (₹{deductionAmount.toLocaleString('en-IN')})
-                        </span>
-                      </div>
-                      <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-300">
-                        <span className="text-emerald-800 font-semibold block text-[11px]">Final Certified Payout:</span>
-                        <span className="text-base font-bold text-emerald-900 font-mono">
-                          ₹{finalPayable.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Weighbridge Notes / Slip */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Weighbridge Slip Number / Moisture Reading / Quality Notes
-                </label>
-                <input
-                  type="text"
-                  value={weighbridgeNotes}
-                  onChange={(e) => setWeighbridgeNotes(e.target.value)}
-                  placeholder="e.g. Weighbridge Slip #WB-8491, Moisture 11.2%, Fair Average Quality certified"
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              {/* Checkpoint Advance Button */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
-                <button
-                  type="button"
-                  disabled={advancing || !givenWeight || Number(givenWeight) <= 0}
-                  onClick={handleCompleteWeightRateStep}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-500 shadow-xs transition disabled:opacity-40"
-                >
-                  <Scale className="w-4 h-4" />
-                  <span>{advancing ? 'Certifying Procurement...' : 'Certify Weighment & Crop Quality (Complete Procurement)'}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ============================================================== */}
-          {/* STEP 5: CROP QUALITY CHECK (Good, Bad, Very Bad)              */}
-          {/* ============================================================== */}
-          {request.workflowStatus === 'crop_quality_check' && (
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                <div>
-                  <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                    <span>Crop Quality Inspection & Price Deduction Grading</span>
-                  </h5>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Assess crop quality against Mandi Fair Average Quality (FAQ) standards. Choose grade to apply official price adjustments.
-                  </p>
-                </div>
-                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                  Checkpoint 5 of 8
-                </span>
-              </div>
-
-              {/* Quality Grade Options */}
-              <div className="space-y-3">
-                <label className="block text-xs font-bold text-slate-700">
-                  Select Crop Quality Assessment: *
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                  {/* Good Quality */}
-                  <div
-                    onClick={() => setQualityGrade('good')}
+                    onClick={() => setQualityStatus('approved')}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition relative flex flex-col justify-between ${
-                      qualityGrade === 'good'
-                        ? 'border-emerald-600 bg-emerald-50/80 shadow-xs ring-2 ring-emerald-500/20'
+                      qualityStatus === 'approved'
+                        ? 'border-emerald-600 bg-emerald-50/90 shadow-xs ring-2 ring-emerald-500/20'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
@@ -1763,59 +1682,31 @@ export const AdminRequestDetail: React.FC = () => {
                       <div className="flex items-center justify-between mb-2">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Good Quality</span>
+                          <span>Quality Approved (According to FAQ rules)</span>
                         </span>
                         <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
-                          0% Deduction
+                          Compliant
                         </span>
                       </div>
-                      <h6 className="text-sm font-bold text-slate-900">FAQ Compliant Grain</h6>
-                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                        Deserving claimed MSP rate. Full purity, clean grains, optimal moisture (≤ 12%).
+                      <h6 className="text-xs font-bold text-slate-900 mt-1">FAQ Compliant Grain Batch</h6>
+                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                        Produce complies with all Fair Average Quality (FAQ) standards: clean, optimal moisture (≤ 12%), unblemished grains. Eligible for procurement at full MSP rate.
                       </p>
                     </div>
-                    <div className="mt-3 pt-2.5 border-t border-emerald-200/60 text-xs font-semibold text-emerald-900 flex justify-between">
-                      <span>Rate Payout:</span>
-                      <strong className="font-mono">100% MSP Rate</strong>
+                    <div className="mt-3 pt-2 border-t border-emerald-200/60 text-xs font-semibold text-emerald-900 flex justify-between items-center">
+                      <span>Action on Selection:</span>
+                      <strong className="text-emerald-700 flex items-center gap-1 font-bold">
+                        Process Continues <ChevronRight className="w-3.5 h-3.5" />
+                      </strong>
                     </div>
                   </div>
 
-                  {/* Bad Quality */}
+                  {/* Option 2: Quality is not approved */}
                   <div
-                    onClick={() => setQualityGrade('bad')}
+                    onClick={() => setQualityStatus('not_approved')}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition relative flex flex-col justify-between ${
-                      qualityGrade === 'bad'
-                        ? 'border-amber-600 bg-amber-50/80 shadow-xs ring-2 ring-amber-500/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-600 text-white">
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          <span>Bad Quality</span>
-                        </span>
-                        <span className="text-xs font-bold text-amber-900 bg-amber-200 px-2 py-0.5 rounded">
-                          -15% Deduction
-                        </span>
-                      </div>
-                      <h6 className="text-sm font-bold text-slate-900">Substandard Grain</h6>
-                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                        Minor foreign matter, discoloration, or elevated moisture (12-14%). 15% statutory deduction applied.
-                      </p>
-                    </div>
-                    <div className="mt-3 pt-2.5 border-t border-amber-200/60 text-xs font-semibold text-amber-900 flex justify-between">
-                      <span>Rate Payout:</span>
-                      <strong className="font-mono">85% of Base MSP</strong>
-                    </div>
-                  </div>
-
-                  {/* Very Bad Quality */}
-                  <div
-                    onClick={() => setQualityGrade('very_bad')}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition relative flex flex-col justify-between ${
-                      qualityGrade === 'very_bad'
-                        ? 'border-rose-600 bg-rose-50/80 shadow-xs ring-2 ring-rose-500/20'
+                      qualityStatus === 'not_approved'
+                        ? 'border-rose-600 bg-rose-50/90 shadow-xs ring-2 ring-rose-500/20'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
@@ -1823,111 +1714,345 @@ export const AdminRequestDetail: React.FC = () => {
                       <div className="flex items-center justify-between mb-2">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-600 text-white">
                           <XCircle className="w-3.5 h-3.5" />
-                          <span>Very Bad Quality</span>
+                          <span>Quality is not approved</span>
                         </span>
-                        <span className="text-xs font-bold text-rose-900 bg-rose-200 px-2 py-0.5 rounded">
-                          -30% Deduction
+                        <span className="text-xs font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded">
+                          Non-Compliant
                         </span>
                       </div>
-                      <h6 className="text-sm font-bold text-slate-900">Heavily Degraded Crop</h6>
-                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                        High foreign matter, insect damage, or severe moisture (14%+). 30% statutory deduction applied.
+                      <h6 className="text-xs font-bold text-slate-900 mt-1">Fails Mandi FAQ Standards</h6>
+                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                        Produce fails Fair Average Quality (FAQ) guidelines due to excess moisture (&gt; 12%), foreign matter, or damaged grains. Batch is disqualified from procurement.
                       </p>
                     </div>
-                    <div className="mt-3 pt-2.5 border-t border-rose-200/60 text-xs font-semibold text-rose-900 flex justify-between">
-                      <span>Rate Payout:</span>
-                      <strong className="font-mono">70% of Base MSP</strong>
+                    <div className="mt-3 pt-2 border-t border-rose-200/60 text-xs font-semibold text-rose-900 flex justify-between items-center">
+                      <span>Action on Selection:</span>
+                      <strong className="text-rose-700 flex items-center gap-1 font-bold">
+                        Cancel Procurement (Status: Failed)
+                      </strong>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Live Quality Calculation Breakdown */}
-              {(() => {
-                const q = Number(givenWeight || request.verifiedQuantity || request.quantityQuintals);
-                const r = Number(verifiedRate || request.verifiedRate || request.ratePerQuintal);
-                const gross = q * r;
-                const deductionPct = qualityGrade === 'good' ? 0 : qualityGrade === 'bad' ? 15 : 30;
-                const deductionAmount = Math.round((gross * deductionPct) / 100);
-                const finalPayable = gross - deductionAmount;
+              {/* Conditional View: When Quality Approved */}
+              {qualityStatus === 'approved' && (
+                <>
+                  {(() => {
+                    const q = Number(givenWeight || request.verifiedQuantity || request.quantityQuintals);
+                    const r = Number(verifiedRate || request.verifiedRate || request.ratePerQuintal);
+                    const gross = q * r;
 
-                return (
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-                    <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-200">
-                      <span className="font-bold text-slate-700 uppercase tracking-wider">
-                        Price Deduction & Final Payable Calculation
-                      </span>
-                      <span className="font-semibold text-slate-500">
-                        {q} Qtl @ ₹{r}/Qtl
-                      </span>
+                    return (
+                      <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-2.5">
+                        <div className="flex items-center justify-between text-xs pb-2 border-b border-emerald-200">
+                          <span className="font-bold text-emerald-900 uppercase tracking-wider">
+                            Certified Payout Summary ({q} Quintals @ ₹{r}/Qtl)
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-600 text-white">
+                            Quality Approved (FAQ Rules)
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                          <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
+                            <span className="text-slate-500 block text-[11px]">Given Weight:</span>
+                            <span className="text-sm font-bold text-slate-900 font-mono">
+                              {q} Quintals
+                            </span>
+                          </div>
+                          <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
+                            <span className="text-slate-500 block text-[11px]">Verified MSP Rate:</span>
+                            <span className="text-sm font-bold text-slate-900 font-mono">
+                              ₹{r}/Qtl
+                            </span>
+                          </div>
+                          <div className="p-2.5 bg-emerald-100/70 rounded-lg border border-emerald-300 col-span-2 sm:col-span-1">
+                            <span className="text-emerald-800 font-semibold block text-[11px]">Final Payable to Farmer:</span>
+                            <span className="text-base font-bold text-emerald-900 font-mono">
+                              ₹{gross.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Weighbridge Notes */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Weighbridge Slip Number / Moisture Reading / Quality Inspector Remarks (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={weighbridgeNotes}
+                      onChange={(e) => setWeighbridgeNotes(e.target.value)}
+                      placeholder="e.g. Weighbridge Slip #WB-8491, Moisture 11.2%, Fair Average Quality certified"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  {/* Checkpoint Advance Button */}
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
+                    <button
+                      type="button"
+                      disabled={advancing || !givenWeight || Number(givenWeight) <= 0}
+                      onClick={handleCompleteWeightRateStep}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-500 shadow-xs transition disabled:opacity-40"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{advancing ? 'Certifying Procurement...' : 'Quality Approved — Continue & Complete Procurement'}</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Conditional View: When Quality Not Approved */}
+              {qualityStatus === 'not_approved' && (
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-3">
+                  <div className="flex items-center gap-2 font-bold text-sm text-rose-800">
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    <span>Quality Not Approved: Disqualification & Cancellation Protocol</span>
+                  </div>
+                  <p className="text-rose-700 leading-relaxed">
+                    Under APMC & Mandi Fair Average Quality (FAQ) guidelines, crops failing physical inspection cannot be procured under the government MSP scheme. Confirming cancellation marks this transaction as <strong>Failed</strong>, halts custody intake, updates the farmer dashboard immediately, and dispatches a cancellation message to the farmer.
+                  </p>
+                  <div>
+                    <label className="block text-[11px] font-bold text-rose-900 uppercase tracking-wider mb-1">
+                      Reason for Quality Rejection / Remarks for Farmer *
+                    </label>
+                    <input
+                      type="text"
+                      value={qualityCancellationReason}
+                      onChange={(e) => setQualityCancellationReason(e.target.value)}
+                      placeholder="e.g. Produce does not meet Fair Average Quality (FAQ) standards. High moisture (15.2%) exceeding limit."
+                      className="w-full px-3 py-2 bg-white border border-rose-300 rounded-lg text-xs text-slate-900 focus:ring-2 focus:ring-rose-500"
+                    />
+                  </div>
+                  <div className="pt-2 flex items-center justify-end">
+                    <button
+                      type="button"
+                      disabled={advancing}
+                      onClick={handleCancelProcurementForQuality}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-xs font-bold text-white hover:bg-rose-700 shadow-xs transition disabled:opacity-40 cursor-pointer"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>{advancing ? 'Cancelling Procurement...' : 'Cancel Procurement (Status: Failed)'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* STEP 5: CROP QUALITY CHECK (Quality Approved vs Not Approved) */}
+          {/* ============================================================== */}
+          {!isProcurementFailed && request.workflowStatus === 'crop_quality_check' && (
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div>
+                  <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    <span>Crop Quality Verification (FAQ Standards)</span>
+                  </h5>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Assess crop quality against Fair Average Quality (FAQ) standards. Select whether quality is approved or not approved.
+                  </p>
+                </div>
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                  Checkpoint 5 of 8
+                </span>
+              </div>
+
+              {/* Two Option Selection: Quality Approved vs Quality Not Approved */}
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-slate-700">
+                  Select Crop Quality Assessment: *
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Option 1: Quality Approved (According to FAQ rules) */}
+                  <div
+                    onClick={() => setQualityStatus('approved')}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition relative flex flex-col justify-between ${
+                      qualityStatus === 'approved'
+                        ? 'border-emerald-600 bg-emerald-50/90 shadow-xs ring-2 ring-emerald-500/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Quality Approved (According to FAQ rules)</span>
+                        </span>
+                        <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
+                          Full MSP Payout
+                        </span>
+                      </div>
+                      <h6 className="text-sm font-bold text-slate-900 mt-1">FAQ Compliant Grain</h6>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                        Deserving claimed MSP rate. Full purity, clean grains, optimal moisture (≤ 12%). Eligible to continue procurement custody.
+                      </p>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                      <div className="p-3 bg-white rounded-lg border border-slate-200">
-                        <span className="text-slate-500 block">Gross Claim Value:</span>
-                        <span className="text-base font-bold text-slate-900 font-mono">
-                          ₹{gross.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="p-3 bg-white rounded-lg border border-slate-200">
-                        <span className="text-slate-500 block">Assessed Quality:</span>
-                        <span className={`text-base font-bold capitalize ${
-                          qualityGrade === 'good' ? 'text-emerald-700' : qualityGrade === 'bad' ? 'text-amber-700' : 'text-rose-700'
-                        }`}>
-                          {qualityGrade.replace('_', ' ')}
-                        </span>
-                      </div>
-                      <div className="p-3 bg-white rounded-lg border border-slate-200">
-                        <span className="text-slate-500 block">Quality Deduction:</span>
-                        <span className="text-base font-bold text-rose-600 font-mono">
-                          -{deductionPct}% (₹{deductionAmount.toLocaleString('en-IN')})
-                        </span>
-                      </div>
-                      <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-300">
-                        <span className="text-emerald-800 font-semibold block">Final Payable to Farmer:</span>
-                        <span className="text-lg font-bold text-emerald-900 font-mono">
-                          ₹{finalPayable.toLocaleString('en-IN')}
-                        </span>
-                      </div>
+                    <div className="mt-3 pt-2.5 border-t border-emerald-200/60 text-xs font-semibold text-emerald-900 flex justify-between items-center">
+                      <span>Lifecycle Action:</span>
+                      <strong className="text-emerald-700 flex items-center gap-1 font-bold">
+                        Continue Process <ChevronRight className="w-3.5 h-3.5" />
+                      </strong>
                     </div>
                   </div>
-                );
-              })()}
 
-              {/* Quality Notes */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Quality Inspector Notes / Moisture Meter Reading (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={qualityNotes}
-                  onChange={(e) => setQualityNotes(e.target.value)}
-                  placeholder="e.g. Moisture 11.4%, Purity 98.6%, Certified by Mandi QC Officer"
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:ring-2 focus:ring-emerald-500"
-                />
+                  {/* Option 2: Quality is not approved */}
+                  <div
+                    onClick={() => setQualityStatus('not_approved')}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition relative flex flex-col justify-between ${
+                      qualityStatus === 'not_approved'
+                        ? 'border-rose-600 bg-rose-50/90 shadow-xs ring-2 ring-rose-500/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-600 text-white">
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Quality is not approved</span>
+                        </span>
+                        <span className="text-xs font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded">
+                          Disqualification
+                        </span>
+                      </div>
+                      <h6 className="text-sm font-bold text-slate-900 mt-1">Fails Mandi FAQ Standards</h6>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                        Produce fails Fair Average Quality (FAQ) guidelines due to excess moisture (&gt; 12%), foreign matter, or damaged grains. Batch is disqualified from procurement.
+                      </p>
+                    </div>
+                    <div className="mt-3 pt-2.5 border-t border-rose-200/60 text-xs font-semibold text-rose-900 flex justify-between items-center">
+                      <span>Lifecycle Action:</span>
+                      <strong className="text-rose-700 flex items-center gap-1 font-bold">
+                        Cancel Procurement (Status: Failed)
+                      </strong>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Checkpoint Advance Button */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
-                <button
-                  type="button"
-                  disabled={advancing}
-                  onClick={handleCompleteQualityCheckStep}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-500 shadow-xs transition disabled:opacity-40"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>{advancing ? 'Recording Quality Check...' : 'Certify Quality & Complete Procurement'}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              {/* Conditional View: When Quality Approved */}
+              {qualityStatus === 'approved' && (
+                <>
+                  {(() => {
+                    const q = Number(givenWeight || request.verifiedQuantity || request.quantityQuintals);
+                    const r = Number(verifiedRate || request.verifiedRate || request.ratePerQuintal);
+                    const gross = q * r;
+
+                    return (
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-200">
+                          <span className="font-bold text-slate-700 uppercase tracking-wider">
+                            Certified Payable Calculation
+                          </span>
+                          <span className="font-semibold text-slate-500">
+                            {q} Qtl @ ₹{r}/Qtl
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                          <div className="p-3 bg-white rounded-lg border border-slate-200">
+                            <span className="text-slate-500 block">Given Quantity:</span>
+                            <span className="text-base font-bold text-slate-900 font-mono">
+                              {q} Quintals
+                            </span>
+                          </div>
+                          <div className="p-3 bg-white rounded-lg border border-slate-200">
+                            <span className="text-slate-500 block">Assessed Quality:</span>
+                            <span className="text-base font-bold text-emerald-700">
+                              Quality Approved (FAQ Rules)
+                            </span>
+                          </div>
+                          <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-300">
+                            <span className="text-emerald-800 font-semibold block">Final Payable to Farmer:</span>
+                            <span className="text-lg font-bold text-emerald-900 font-mono">
+                              ₹{gross.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Quality Notes */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Quality Inspector Notes / Moisture Meter Reading (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={qualityNotes}
+                      onChange={(e) => setQualityNotes(e.target.value)}
+                      placeholder="e.g. Moisture 11.4%, Purity 98.6%, Certified by Mandi QC Officer"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  {/* Checkpoint Advance Button */}
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
+                    <button
+                      type="button"
+                      disabled={advancing}
+                      onClick={handleCompleteQualityCheckStep}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-500 shadow-xs transition disabled:opacity-40"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>{advancing ? 'Recording Quality Check...' : 'Quality Approved — Continue & Complete Procurement'}</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Conditional View: When Quality Not Approved */}
+              {qualityStatus === 'not_approved' && (
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-3">
+                  <div className="flex items-center gap-2 font-bold text-sm text-rose-800">
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    <span>Quality Not Approved: Disqualification & Cancellation Protocol</span>
+                  </div>
+                  <p className="text-rose-700 leading-relaxed">
+                    Under Mandi Fair Average Quality (FAQ) rules, batch lots failing physical inspection cannot be procured under the MSP scheme. Clicking "Cancel Procurement" will mark this transaction as <strong>Failed</strong>, cancel the booking, halt custody intake, update the farmer dashboard immediately, and dispatch a cancellation alert message to the farmer.
+                  </p>
+                  <div>
+                    <label className="block text-[11px] font-bold text-rose-900 uppercase tracking-wider mb-1">
+                      Reason for Quality Rejection / Remarks for Farmer *
+                    </label>
+                    <input
+                      type="text"
+                      value={qualityCancellationReason}
+                      onChange={(e) => setQualityCancellationReason(e.target.value)}
+                      placeholder="e.g. Produce does not meet Fair Average Quality (FAQ) standards. High moisture (15.2%) exceeding limit."
+                      className="w-full px-3 py-2 bg-white border border-rose-300 rounded-lg text-xs text-slate-900 focus:ring-2 focus:ring-rose-500"
+                    />
+                  </div>
+                  <div className="pt-2 flex items-center justify-end">
+                    <button
+                      type="button"
+                      disabled={advancing}
+                      onClick={handleCancelProcurementForQuality}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-xs font-bold text-white hover:bg-rose-700 shadow-xs transition disabled:opacity-40 cursor-pointer"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>{advancing ? 'Cancelling Procurement...' : 'Cancel Procurement (Status: Failed)'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* ============================================================== */}
           {/* STEP 6: PROCUREMENT DONE RECEIPT                               */}
           {/* ============================================================== */}
-          {request.workflowStatus === 'procurement_completed' && (
+          {!isProcurementFailed && request.workflowStatus === 'procurement_completed' && (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-5">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
@@ -1995,7 +2120,7 @@ export const AdminRequestDetail: React.FC = () => {
           {/* ============================================================== */}
           {/* STEP 6 & 7: PAYMENT PROCESSING (Two explicit choices)          */}
           {/* ============================================================== */}
-          {(request.workflowStatus === 'payment_processing' || request.workflowStatus === 'payment_completed') && (
+          {!isProcurementFailed && (request.workflowStatus === 'payment_processing' || request.workflowStatus === 'payment_completed') && (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                 <div>

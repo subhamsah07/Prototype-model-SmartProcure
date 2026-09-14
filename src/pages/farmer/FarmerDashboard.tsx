@@ -14,6 +14,7 @@ import {
   RefreshCw,
   TrendingUp,
   Tag,
+  XCircle,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '../../components/ui/Button';
@@ -31,8 +32,17 @@ import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { deriveVerificationCode } from '../../lib/utils';
 
 export const FarmerDashboard: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { profile: authProfile, user } = useAuth();
+  const [, setLangVersion] = React.useState(i18n.language);
+
+  React.useEffect(() => {
+    const onLang = (lng: string) => setLangVersion(lng);
+    i18n.on('languageChanged', onLang);
+    return () => {
+      i18n.off('languageChanged', onLang);
+    };
+  }, [i18n]);
 
   // Profile & Booking State
   const [farmerProfile, setFarmerProfile] = React.useState<FarmerProfile | null>(null);
@@ -91,7 +101,7 @@ export const FarmerDashboard: React.FC = () => {
       return t('dashboard.goodAfternoon', 'Good Afternoon');
     }
     return t('dashboard.goodEvening', 'Good Evening');
-  }, [t]);
+  }, [t, i18n.language]);
 
   // 2. Load active booking with fallback to latest booking
   const loadActiveBooking = React.useCallback(async () => {
@@ -209,6 +219,16 @@ export const FarmerDashboard: React.FC = () => {
             type: 'procurement',
             title: 'Procurement Completed',
             message: `Your procurement has been successfully completed.\n\nToken: ${booking.token}\nCentre: ${booking.centreName}\nCrop: ${booking.cropName}\nQuantity: ${booking.quantityQuintals} Quintal`,
+          });
+        }
+        // Real notification if procurement is cancelled/failed
+        if ((booking.bookingStatus === 'cancelled' || pr?.status === 'cancelled' || pr?.status === 'rejected') && farmerId && booking.id) {
+          notificationService.createNotification({
+            farmerId,
+            bookingId: booking.id,
+            type: 'procurement',
+            title: 'Procurement Failed - Quality Not Approved',
+            message: `Your procurement appointment for ${booking.cropName} (Token: ${booking.token}) at ${booking.centreName} has been cancelled because the produce did not meet mandatory Fair Average Quality (FAQ) standards.`,
           });
         }
       })
@@ -482,8 +502,45 @@ export const FarmerDashboard: React.FC = () => {
   // Effective status
   const currentStatus = telemetry?.status || 'BOOKED';
 
+  // Check if procurement has failed (e.g. quality check rejected/cancelled)
+  const isProcurementFailed = React.useMemo(() => {
+    return (
+      booking?.bookingStatus === 'cancelled' ||
+      booking?.bookingStatus === 'failed' ||
+      (booking?.workflowStatus as string) === 'CANCELLED' ||
+      (booking?.workflowStatus as string) === 'REJECTED' ||
+      procurementRequest?.status === 'cancelled' ||
+      procurementRequest?.status === 'rejected'
+    );
+  }, [booking?.bookingStatus, booking?.workflowStatus, procurementRequest?.status]);
+
   // 4-Stage Procurement Progress Milestones
   const workflowMilestones = React.useMemo(() => {
+    if (isProcurementFailed) {
+      return [
+        {
+          id: 1,
+          title: t('dashboard.stepBooking', 'Booking Confirmed'),
+          state: 'completed' as const,
+        },
+        {
+          id: 2,
+          title: t('dashboard.stepCheckin', 'Farmer Checked In'),
+          state: 'completed' as const,
+        },
+        {
+          id: 3,
+          title: t('dashboard.stepQualityCheck', 'Quality Check'),
+          state: 'completed' as const,
+        },
+        {
+          id: 4,
+          title: t('dashboard.stepQualityFailed', 'Procurement Failed (Quality Not Approved)'),
+          state: 'failed' as const,
+        },
+      ];
+    }
+
     const isCompleted = currentStatus === 'COMPLETED' || booking?.bookingStatus === 'completed';
     const isProcessing = currentStatus === 'PROCESSING';
     const isCheckedIn = currentStatus === 'WAITING' || currentStatus === 'CHECKED_IN' || isProcessing || isCompleted;
@@ -510,33 +567,30 @@ export const FarmerDashboard: React.FC = () => {
         state: isCompleted ? 'completed' : ('pending' as const),
       },
     ];
-  }, [currentStatus, booking?.bookingStatus, t]);
+  }, [isProcurementFailed, currentStatus, booking?.bookingStatus, t, i18n.language]);
 
   // Payment badge rendering - strictly synchronized with Admin completion state
+  // If payment is completed by admin then show completed, otherwise show pending
   const paymentStatus: 'completed' | 'processing' | 'pending' | 'failed' = React.useMemo(() => {
-    // 1. Explicit payment record status completed OR admin marked procurement request payment_completed
-    if (payment?.paymentStatus === 'completed' || procurementRequest?.status === 'payment_completed') {
+    // 0. If procurement failed, payment is marked failed
+    if (isProcurementFailed) {
+      return 'failed';
+    }
+    // 1. Only completed if admin has completed the payment in the procurement workflow OR payment record is completed
+    if (procurementRequest?.status === 'payment_completed' || payment?.paymentStatus === 'completed') {
       return 'completed';
     }
     // 2. Failed payment status
     if (payment?.paymentStatus === 'failed') {
       return 'failed';
     }
-    // 3. Explicit processing status from payment record or procurement workflow
-    if (payment?.paymentStatus === 'processing' || procurementRequest?.status === 'payment_processing') {
+    // 3. Admin started payment processing
+    if (procurementRequest?.status === 'payment_processing' || payment?.paymentStatus === 'processing') {
       return 'processing';
     }
-    // 4. Procurement weighment & MSP rate certified, waiting for DBT payment disbursement from admin
-    if (procurementRequest?.status === 'procurement_completed') {
-      return 'processing';
-    }
-    // 5. If booking or live telemetry indicates completed intake, payment is processing untill admin completes it
-    if (currentStatus === 'COMPLETED' || booking?.bookingStatus === 'completed' || booking?.workflowStatus === 'COMPLETED') {
-      return 'processing';
-    }
-    // 6. Default to payment status or pending
-    return payment?.paymentStatus || 'pending';
-  }, [payment?.paymentStatus, procurementRequest?.status, currentStatus, booking?.bookingStatus, booking?.workflowStatus]);
+    // 4. Default to pending if not completed by admin
+    return 'pending';
+  }, [isProcurementFailed, procurementRequest?.status, payment?.paymentStatus]);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -613,11 +667,17 @@ export const FarmerDashboard: React.FC = () => {
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {t('dashboard.currentBooking', 'CURRENT BOOKING')}
               </span>
-              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200/80 dark:border-emerald-800/60">
-                {booking.bookingStatus === 'completed'
-                  ? t('dashboard.completed', 'Completed')
-                  : t('dashboard.confirmed', 'Confirmed')}
-              </span>
+              {isProcurementFailed ? (
+                <span className="text-xs font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">
+                  {t('dashboard.failedQuality', 'Failed (Quality Not Approved)')}
+                </span>
+              ) : (
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200/80 dark:border-emerald-800/60">
+                  {booking.bookingStatus === 'completed'
+                    ? t('dashboard.completed', 'Completed')
+                    : t('dashboard.confirmed', 'Confirmed')}
+                </span>
+              )}
             </div>
 
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -690,12 +750,12 @@ export const FarmerDashboard: React.FC = () => {
                     {tokenCopied ? (
                       <>
                         <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                        <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
+                        <span className="text-emerald-600 dark:text-emerald-400">{t('dashboard.copied', 'Copied')}</span>
                       </>
                     ) : (
                       <>
                         <Copy className="h-3 w-3" />
-                        <span>Copy</span>
+                        <span>{t('dashboard.copy', 'Copy')}</span>
                       </>
                     )}
                   </button>
@@ -704,13 +764,13 @@ export const FarmerDashboard: React.FC = () => {
                 {/* 6-Digit Verification PIN */}
                 <div className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 min-w-[110px]">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                    6-DIGIT PIN
+                    {t('dashboard.pin', '6-DIGIT PIN')}
                   </span>
                   <span className="font-mono text-xl sm:text-2xl font-black tracking-widest text-amber-900 dark:text-amber-200 mt-0.5 select-all">
                     {booking.verificationCode || deriveVerificationCode(booking.token, booking.opaqueQrIdentifier)}
                   </span>
                   <span className="text-[9px] text-amber-700 dark:text-amber-400 mt-1">
-                    Entry PIN
+                    {t('dashboard.entryPin', 'Entry PIN')}
                   </span>
                 </div>
 
@@ -720,11 +780,28 @@ export const FarmerDashboard: React.FC = () => {
                     <QRCodeSVG value={qrValue} size={90} level="M" />
                   </div>
                   <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
-                    Entry QR
+                    {t('dashboard.entryQr', 'Entry QR')}
                   </span>
                 </div>
               </div>
             </div>
+
+            {/* STATE: CANCELLED / FAILED DUE TO QUALITY NOT APPROVED */}
+            {isProcurementFailed && (
+              <div className="mt-4 p-4 sm:p-5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-sm text-rose-900 dark:text-rose-100">
+                  <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+                  <span>Procurement Cancelled — Crop Quality Not Approved</span>
+                </div>
+                <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
+                  Your procurement appointment for <strong>{booking.cropName}</strong> (Token: <span className="font-mono font-bold">{booking.token}</span>) at <strong>{booking.centreName}</strong> has been cancelled because the produce did not pass the mandatory Fair Average Quality (FAQ) standards during physical inspection.
+                </p>
+                <div className="pt-2 text-xs text-rose-800 dark:text-rose-300 border-t border-rose-200/80 dark:border-rose-800/80 flex items-center justify-between">
+                  <span>Status: <strong className="uppercase">Failed</strong></span>
+                  <span className="font-medium text-[11px]">Notice delivered to your account</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 6. LIVE QUEUE / CURRENT STATUS */}
@@ -914,12 +991,15 @@ export const FarmerDashboard: React.FC = () => {
               {workflowMilestones.map((step, idx) => {
                 const isCompleted = step.state === 'completed';
                 const isActive = step.state === 'active';
+                const isFailed = (step.state as string) === 'failed';
 
                 return (
                   <div
                     key={step.id}
                     className={`p-3 rounded-xl border transition-colors ${
-                      isCompleted
+                      isFailed
+                        ? 'border-rose-300 dark:border-rose-800 bg-rose-50/70 dark:bg-rose-950/30'
+                        : isCompleted
                         ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/40 dark:bg-emerald-950/20'
                         : isActive
                         ? 'border-blue-300 dark:border-blue-700 bg-blue-50/40 dark:bg-blue-950/20 ring-1 ring-blue-400 dark:ring-blue-600'
@@ -927,7 +1007,9 @@ export const FarmerDashboard: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      {isCompleted ? (
+                      {isFailed ? (
+                        <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                      ) : isCompleted ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       ) : isActive ? (
                         <span className="w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse shrink-0" />
@@ -940,7 +1022,9 @@ export const FarmerDashboard: React.FC = () => {
                     </div>
                     <span
                       className={`text-xs font-bold block ${
-                        isCompleted
+                        isFailed
+                          ? 'text-rose-900 dark:text-rose-200'
+                          : isCompleted
                           ? 'text-emerald-900 dark:text-emerald-200'
                           : isActive
                           ? 'text-blue-900 dark:text-blue-200'
@@ -997,9 +1081,9 @@ export const FarmerDashboard: React.FC = () => {
                   ₹{estimatedPriceAmount.toLocaleString('en-IN')}
                 </span>
               </div>
-              {(payment?.paymentReference || (paymentStatus === 'completed' && (booking?.paymentReferenceId || (procurementRequest?.id ? `DBT-MSP-${procurementRequest.id.slice(-8)}` : null)))) && (
+              {paymentStatus === 'completed' && (payment?.paymentReference || booking?.paymentReferenceId || procurementRequest?.id) && (
                 <div className="text-xs text-slate-500 dark:text-slate-400 sm:text-right">
-                  <span>Reference: </span>
+                  <span>{t('dashboard.reference', 'Reference')}: </span>
                   <span className="font-mono text-slate-700 dark:text-slate-300">
                     {payment?.paymentReference || booking?.paymentReferenceId || `DBT-MSP-${(procurementRequest?.id || booking?.id || '').slice(-8)}`}
                   </span>

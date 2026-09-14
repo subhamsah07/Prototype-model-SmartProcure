@@ -68,7 +68,7 @@ const BASE_CROPS: Crop[] = [
 ];
 
 // State-specific active MSP benchmarks for each Indian State (per quintal in INR)
-const STATE_MSP_BENCHMARKS: Record<IndianState, Record<CropName, number>> = {
+export const STATE_MSP_BENCHMARKS: Record<IndianState, Record<CropName, number>> = {
   Punjab: { Wheat: 2425, Paddy: 2300, Maize: 2090, Rice: 3100, Mustard: 5650 },
   Haryana: { Wheat: 2425, Paddy: 2300, Maize: 2090, Rice: 3100, Mustard: 5650 },
   'Uttar Pradesh': { Wheat: 2400, Paddy: 2280, Maize: 2060, Rice: 3050, Mustard: 5600 },
@@ -84,6 +84,33 @@ const STATE_MSP_BENCHMARKS: Record<IndianState, Record<CropName, number>> = {
 
 class CropService {
   private priceCache: Map<string, number> = new Map();
+
+  /**
+   * Synchronously returns the admin-configured MSP price or official benchmark for a crop in a state.
+   */
+  getCropPriceSync(cropName: string, state: IndianState): number {
+    const cacheKey = `${state.toLowerCase()}::${cropName.toLowerCase()}`;
+    if (this.priceCache.has(cacheKey)) {
+      return this.priceCache.get(cacheKey)!;
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const storageKey = `smartprocure_custom_rates_${state.toLowerCase()}`;
+        const stored = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        if (stored[cropName.toLowerCase()] != null) {
+          const r = Number(stored[cropName.toLowerCase()]);
+          this.priceCache.set(cacheKey, r);
+          return r;
+        }
+      } catch {}
+    }
+
+    const stateRates = STATE_MSP_BENCHMARKS[state] || STATE_MSP_BENCHMARKS['Punjab'];
+    const r = (stateRates as any)[cropName] ?? 2425;
+    this.priceCache.set(cacheKey, r);
+    return r;
+  }
 
   /**
    * Notifies local runtime and farmer components of real-time price changes.
@@ -114,7 +141,7 @@ class CropService {
    * Fetches the official crops supported under government procurement.
    * Pulls from 'crops' PostgreSQL table in Supabase, falling back to BASE_CROPS.
    */
-  async getCrops(): Promise<Crop[]> {
+  async getCrops(state?: IndianState): Promise<Crop[]> {
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await supabase
@@ -128,7 +155,7 @@ class CropService {
             id: c.id,
             name: c.name as CropName,
             hindiName: c.hindi_name || '',
-            configuredRatePerQuintal: 2425,
+            configuredRatePerQuintal: this.getCropPriceSync(c.name, state || 'Punjab'),
             unit: (c.standard_unit as any) || 'Quintal',
             season: (c.season as any) || 'Rabi',
             description: c.category ? `${c.category} crop for ${c.season || 'national'} procurement.` : undefined,
@@ -140,8 +167,11 @@ class CropService {
         console.warn('Supabase crop query caught error, using base crops:', err);
       }
     }
-    // Reliable fallback so crop selection is never blank
-    return BASE_CROPS;
+    // Reliable fallback with state-specific rates so crop selection is never blank
+    return BASE_CROPS.map((c) => ({
+      ...c,
+      configuredRatePerQuintal: this.getCropPriceSync(c.name, state || 'Punjab'),
+    }));
   }
 
   /**

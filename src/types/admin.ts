@@ -79,7 +79,7 @@ export interface AdminRequestItem {
   ratePerQuintal: number;
   estimatedValue: number;
   finalValue: number | null;
-  qualityGrade?: 'good' | 'bad' | 'very_bad' | null;
+  qualityGrade?: 'good' | 'bad' | 'very_bad' | 'approved' | 'not_approved' | null;
   qualityDeductionPercent?: number;
   createdAt: string;
   paymentStatus?: PaymentStatus | null;

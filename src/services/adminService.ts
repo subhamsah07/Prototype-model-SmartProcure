@@ -25,6 +25,7 @@ import {
 } from '../types/database';
 import { DEFAULT_CENTRES } from './centreService';
 import { cropService } from './cropService';
+import { notificationService } from './notificationService';
 import { deriveVerificationCode } from '../lib/utils';
 
 class AdminService {
@@ -766,7 +767,7 @@ class AdminService {
     verifiedQuantity?: number;
     verifiedRate?: number;
     finalValue?: number;
-    qualityGrade?: 'good' | 'bad' | 'very_bad';
+    qualityGrade?: 'good' | 'bad' | 'very_bad' | 'approved' | 'not_approved';
     qualityDeductionPercent?: number;
     paymentReference?: string;
     notes?: string;
@@ -904,13 +905,16 @@ class AdminService {
     } else if (dbStatus === 'payment_completed') {
       vType = 'rate verification';
       defaultNotes = params.notes || 'Payment completed and credited to farmer account via DBT';
+    } else if (dbStatus === 'cancelled' || dbStatus === 'rejected') {
+      vType = 'weight verification';
+      defaultNotes = params.notes || 'Procurement cancelled: Crop produce failed Fair Average Quality (FAQ) standards';
     }
 
     if (vType) {
       await supabase.from('verification_records').insert({
         procurement_request_id: pr.id,
         verification_type: vType,
-        status: 'verified',
+        status: (dbStatus === 'cancelled' || dbStatus === 'rejected') ? 'rejected' : 'verified',
         verified_by: user?.id || null,
         notes: params.notes || defaultNotes,
         verified_at: new Date().toISOString(),
@@ -922,6 +926,11 @@ class AdminService {
       await supabase
         .from('bookings')
         .update({ booking_status: 'completed', updated_at: new Date().toISOString() })
+        .eq('id', params.bookingId);
+    } else if (params.newStatus === 'cancelled' || params.newStatus === 'rejected') {
+      await supabase
+        .from('bookings')
+        .update({ booking_status: 'cancelled', updated_at: new Date().toISOString() })
         .eq('id', params.bookingId);
     } else {
       // Any intermediate step (including procurement_completed / payment_processing) means active
@@ -942,7 +951,69 @@ class AdminService {
     const rate = params.verifiedRate || pr.verified_rate || pr.configured_rate || 2425;
     const qty = params.verifiedQuantity || pr.verified_quantity || pr.submitted_quantity || 0;
 
-    if (params.newStatus === 'procurement_completed' || params.newStatus === 'payment_processing') {
+    if (params.newStatus === 'cancelled' || params.newStatus === 'rejected') {
+      // Record queue event
+      try {
+        await supabase.from('queue_events').insert({
+          booking_id: params.bookingId,
+          centre_id: pr.centre_id,
+          event_type: 'cancelled',
+          event_timestamp: new Date().toISOString(),
+          notes: params.notes || 'Procurement cancelled: Crop quality failed Fair Average Quality (FAQ) standards.',
+        });
+      } catch (qErr) {
+        console.warn('Failed to insert queue cancellation event:', qErr);
+      }
+
+      // Mark payment failed if existing
+      try {
+        const { data: existingPay } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('procurement_request_id', pr.id)
+          .maybeSingle();
+
+        if (existingPay?.id) {
+          await supabase
+            .from('payments')
+            .update({ payment_status: 'failed', updated_at: new Date().toISOString() })
+            .eq('id', existingPay.id);
+        }
+      } catch (payErr) {
+        console.warn('Failed to update payment status to failed:', payErr);
+      }
+
+      // Dispatch failure notification to farmer
+      const failureTitle = 'Procurement Failed - Quality Not Approved';
+      const failureMsg =
+        params.notes ||
+        `Your procurement appointment has been cancelled because the produce did not meet mandatory Fair Average Quality (FAQ) standards.`;
+
+      try {
+        await supabase.from('notifications').insert({
+          farmer_id: pr.farmer_id,
+          booking_id: params.bookingId,
+          type: 'procurement',
+          title: failureTitle,
+          message: failureMsg,
+          read: false,
+        });
+      } catch (notifErr) {
+        console.warn('Failed to insert notification in Supabase:', notifErr);
+      }
+
+      try {
+        await notificationService.createNotification({
+          farmerId: pr.farmer_id,
+          bookingId: params.bookingId,
+          type: 'procurement',
+          title: failureTitle,
+          message: failureMsg,
+        });
+      } catch (localNotifErr) {
+        console.warn('Failed to dispatch notification to service:', localNotifErr);
+      }
+    } else if (params.newStatus === 'procurement_completed' || params.newStatus === 'payment_processing') {
       // Manage payment as pending / processing
       if (finalVal > 0) {
         const { data: existingPay } = await supabase
@@ -1028,6 +1099,21 @@ class AdminService {
     }
 
     return true;
+  }
+
+  /**
+   * Officially cancels and marks procurement failed when crop fails Mandi Fair Average Quality (FAQ) inspection.
+   * Updates procurement_request to cancelled, booking to cancelled, logs queue event, and alerts farmer.
+   */
+  async cancelProcurementDueToQuality(params: {
+    bookingId: string;
+    reason?: string;
+  }): Promise<boolean> {
+    return this.advanceWorkflowStatus({
+      bookingId: params.bookingId,
+      newStatus: 'cancelled',
+      notes: params.reason || 'Procurement cancelled: Crop produce failed Fair Average Quality (FAQ) standards.',
+    });
   }
 
   /**

@@ -141,20 +141,6 @@ class PaymentService {
         }
       }
 
-      // If no payment row by pr.id, check by farmer_id
-      if (!paymentData && pr?.farmer_id) {
-        const { data: farmerPayments } = await supabase
-          .from('payments')
-          .select('*')
-          .eq('farmer_id', pr.farmer_id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (farmerPayments && farmerPayments.length > 0) {
-          paymentData = farmerPayments[0];
-        }
-      }
-
       const isPrCompleted = pr?.status === 'payment_completed';
 
       if (paymentData) {

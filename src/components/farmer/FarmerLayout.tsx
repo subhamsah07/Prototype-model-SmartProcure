@@ -88,9 +88,29 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
     };
   }, []);
 
-  const currentLang = (i18n.language || 'en') as SupportedLanguage;
+  const [currentLang, setCurrentLang] = React.useState<SupportedLanguage>(
+    (i18n.language as SupportedLanguage) || 'en'
+  );
+
+  React.useEffect(() => {
+    const handleLangChange = (lng: string) => {
+      setCurrentLang((lng as SupportedLanguage) || 'en');
+    };
+    i18n.on('languageChanged', handleLangChange);
+    return () => {
+      i18n.off('languageChanged', handleLangChange);
+    };
+  }, [i18n]);
+
   const handleLanguageSelect = (code: SupportedLanguage) => {
+    setCurrentLang(code);
     i18n.changeLanguage(code);
+    try {
+      localStorage.setItem('smartprocure_language', code);
+      localStorage.setItem('i18nextLng', code);
+    } catch {
+      // ignore
+    }
     setLangDropdownOpen(false);
   };
 
