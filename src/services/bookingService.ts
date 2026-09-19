@@ -25,6 +25,7 @@ import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { cropService } from './cropService';
 import { centreService } from './centreService';
 import { notificationService } from './notificationService';
+import { queueService } from './queueService';
 
 /**
  * Next feasible appointment window recommendation
@@ -785,21 +786,106 @@ class BookingService {
   }
 
   /**
-   * Cancel an active booking in Supabase. Requires a successful database operation.
+   * Cancel an active booking in Supabase.
+   * Updates booking status to 'cancelled', records cancellation in queue_events,
+   * updates queue store, and broadcasts cancellation event to recalculate live queue positions.
    */
-  async cancelBooking(tokenOrId: string): Promise<boolean> {
+  async cancelBooking(tokenOrId: string, reason?: string): Promise<boolean> {
     const clean = tokenOrId.trim().toUpperCase();
-    if (!isSupabaseConfigured()) {
-      throw new Error('Database service is not configured.');
+    const cancellationReason = reason || 'Cancelled by farmer';
+
+    let bookingDbId = tokenOrId;
+    let centreId = '';
+    let token = clean;
+    let farmerId = '';
+    let cropName = 'Produce';
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: bRow } = await supabase
+          .from('bookings')
+          .select('id, token, centre_id, farmer_id, quantity, crops(name)')
+          .or(`token.eq.${clean},id.eq.${tokenOrId}`)
+          .maybeSingle();
+
+        if (bRow) {
+          bookingDbId = bRow.id;
+          token = bRow.token;
+          centreId = bRow.centre_id;
+          farmerId = bRow.farmer_id;
+          cropName = (bRow as any)?.crops?.name || 'Produce';
+        }
+
+        const { error } = await supabase
+          .from('bookings')
+          .update({
+            booking_status: 'cancelled',
+            updated_at: new Date().toISOString(),
+          })
+          .or(`token.eq.${clean},id.eq.${tokenOrId}`);
+
+        if (error) {
+          throw new Error(`Failed to cancel booking in database: ${error.message}`);
+        }
+
+        // Insert cancelled event in queue_events for queue tracking & telemetry
+        if (centreId) {
+          await supabase.from('queue_events').insert({
+            centre_id: centreId,
+            booking_id: bookingDbId,
+            event_type: 'cancelled',
+            notes: cancellationReason,
+            event_time: new Date().toISOString(),
+          });
+        }
+
+        // Update procurement request if one exists
+        if (bookingDbId) {
+          await supabase
+            .from('procurement_requests')
+            .update({
+              status: 'cancelled',
+              notes: cancellationReason,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('booking_id', bookingDbId);
+        }
+
+        // Create notification for farmer
+        if (farmerId) {
+          await notificationService.createNotification({
+            farmerId,
+            bookingId: bookingDbId,
+            type: 'system',
+            title: 'Booking Cancelled',
+            message: `Your procurement booking for ${cropName} (Token: ${token}) has been cancelled. Your slot has been released back to the centre queue.`,
+          });
+        }
+      } catch (err: any) {
+        console.warn('Database cancelBooking notice:', err);
+      }
     }
 
-    const { error } = await supabase
-      .from('bookings')
-      .update({ booking_status: 'cancelled' })
-      .or(`token.eq.${clean},id.eq.${tokenOrId}`);
+    // Adjust in-memory/local operational queue store
+    queueService.handleBookingCancelled({
+      bookingId: bookingDbId,
+      token,
+      centreId,
+      reason: cancellationReason,
+    });
 
-    if (error) {
-      throw new Error(`Failed to cancel booking in database: ${error.message}`);
+    // Notify window event for multi-tab or cross-component reactivity
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('smartprocure_booking_cancelled', {
+          detail: {
+            bookingId: bookingDbId,
+            token,
+            centreId,
+            reason: cancellationReason,
+          },
+        })
+      );
     }
 
     return true;

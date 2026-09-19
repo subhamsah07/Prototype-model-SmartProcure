@@ -367,7 +367,7 @@ export const BookSlot: React.FC = () => {
         </div>
 
         {/* Hero Token Card */}
-        <Card className="border-2 border-emerald-600 shadow-xl overflow-hidden bg-white">
+        <Card className="border-2 border-emerald-600 shadow-xl overflow-hidden bg-white dark:bg-neutral-900">
           <div className="bg-emerald-900 text-white px-6 py-3 flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-200">
               OFFICIAL FARMER TOKEN
@@ -419,8 +419,8 @@ export const BookSlot: React.FC = () => {
             </div>
 
             {/* Official QR Code Block */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-center justify-center text-center space-y-3 shadow-inner">
-              <span className="text-xs text-slate-600 font-bold tracking-wider uppercase">
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 flex flex-col items-center justify-center text-center space-y-3 shadow-inner">
+              <span className="text-xs text-slate-600 dark:text-neutral-400 font-bold tracking-wider uppercase">
                 Official Intake Verification QR
               </span>
               <div className="p-3 bg-white rounded-xl border border-slate-300 shadow-sm">
@@ -431,10 +431,10 @@ export const BookSlot: React.FC = () => {
                   includeMargin={false}
                 />
               </div>
-              <div className="text-xs text-slate-600 font-medium">
-                Linked PIN: <span className="font-mono font-bold text-slate-900">{confirmedBooking.verificationCode || deriveVerificationCode(confirmedBooking.token, confirmedBooking.opaqueQrIdentifier)}</span>
+              <div className="text-xs text-slate-600 dark:text-neutral-300 font-medium">
+                Linked PIN: <span className="font-mono font-bold text-slate-900 dark:text-white">{confirmedBooking.verificationCode || deriveVerificationCode(confirmedBooking.token, confirmedBooking.opaqueQrIdentifier)}</span>
               </div>
-              <p className="text-[11px] text-slate-500 max-w-sm">
+              <p className="text-[11px] text-slate-500 dark:text-neutral-400 max-w-sm">
                 Present this QR code or provide the 6-digit PIN to the procurement centre operator at entry gate for instant intake verification.
               </p>
             </div>
@@ -603,17 +603,17 @@ export const BookSlot: React.FC = () => {
                       onClick={() => setSelectedCropName(crop.name as CropName)}
                       className={`p-3.5 rounded-xl border text-left flex flex-col justify-between transition-all ${
                         isSelected
-                          ? 'border-2 border-emerald-600 bg-emerald-50 shadow-xs ring-2 ring-emerald-600/10'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                          ? 'border-2 border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 shadow-xs ring-2 ring-emerald-600/10'
+                          : 'border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 bg-white dark:bg-neutral-900'
                       }`}
                     >
                       <div>
-                        <span className="font-extrabold text-sm text-slate-900 block">{crop.name}</span>
-                        <span className="text-xs text-slate-500 block">{crop.hindiName}</span>
+                        <span className="font-extrabold text-sm text-slate-900 dark:text-white block">{crop.name}</span>
+                        <span className="text-xs text-slate-500 dark:text-neutral-400 block">{crop.hindiName}</span>
                       </div>
-                      <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
-                        <span className="text-slate-400">MSP Rate</span>
-                        <span className="font-bold text-emerald-800">
+                      <div className="mt-3 pt-2 border-t border-slate-200/60 dark:border-neutral-800 flex items-center justify-between text-xs">
+                        <span className="text-slate-400 dark:text-neutral-500">MSP Rate</span>
+                        <span className="font-bold text-emerald-800 dark:text-emerald-400">
                           ₹{cropPrices[crop.name] ?? crop.configuredRatePerQuintal} / Q
                         </span>
                       </div>
@@ -622,8 +622,8 @@ export const BookSlot: React.FC = () => {
                 })}
               </div>
             ) : (
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center gap-2.5">
-                <AlertCircle className="h-4 w-4 text-amber-700 shrink-0" />
+              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2.5">
+                <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0" />
                 <span>No official procurement crops are registered in the database.</span>
               </div>
             )}
@@ -642,8 +642,8 @@ export const BookSlot: React.FC = () => {
             </div>
 
             {/* Estimated Procurement Value Box */}
-            <div className="p-4 rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-800 text-white shadow-md">
-              <span className="text-xs font-bold text-slate-300 dark:text-slate-400 uppercase tracking-wider block">
+            <div className="p-4 rounded-xl bg-black border border-neutral-800 text-white shadow-md">
+              <span className="text-xs font-bold text-neutral-300 uppercase tracking-wider block">
                 Estimated Procurement Value
               </span>
               <span className="text-2xl sm:text-3xl font-black text-orange-500 block mt-1">
@@ -684,11 +684,11 @@ export const BookSlot: React.FC = () => {
                   value={selectedDistrict}
                   onChange={(e) => setSelectedDistrict(e.target.value)}
                   disabled={isLoadingDistricts}
-                  className="w-full h-11 px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 disabled:bg-slate-50"
+                  className="w-full h-11 px-3 py-2 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm text-slate-900 dark:text-neutral-100 font-medium focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 disabled:bg-slate-50 dark:disabled:bg-neutral-950"
                 >
-                  <option key="all" value="all">All Districts in {farmerState} ({districts.length})</option>
+                  <option key="all" value="all" className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">All Districts in {farmerState} ({districts.length})</option>
                   {districts.map((d) => (
-                    <option key={d.id || d.districtCode || d.districtName} value={d.districtName}>
+                    <option key={d.id || d.districtCode || d.districtName} value={d.districtName} className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">
                       {d.districtName}
                     </option>
                   ))}
@@ -697,11 +697,11 @@ export const BookSlot: React.FC = () => {
 
               {/* Centre Selection */}
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300">
                   Procurement Centre
                 </label>
                 {isLoadingCentres ? (
-                  <div className="flex items-center gap-2 p-3 text-sm text-slate-500 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-2 p-3 text-sm text-slate-500 dark:text-neutral-400 bg-slate-50 dark:bg-neutral-800 rounded-lg border border-slate-200 dark:border-neutral-700">
                     <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
                     <span>Loading verified centres from database...</span>
                   </div>
@@ -710,18 +710,18 @@ export const BookSlot: React.FC = () => {
                     id="book-slot-centre-select"
                     value={selectedCentreId}
                     onChange={(e) => setSelectedCentreId(e.target.value)}
-                    className="w-full h-11 px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+                    className="w-full h-11 px-3 py-2 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm text-slate-900 dark:text-neutral-100 font-medium focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
                   >
-                    <option value="">-- Select a registered procurement centre --</option>
+                    <option value="" className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">-- Select a registered procurement centre --</option>
                     {centres.map((c) => (
-                      <option key={c.id} value={c.id}>
+                      <option key={c.id} value={c.id} className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">
                         {c.name} ({c.district}) — {c.capacityPerDayQuintals.toLocaleString()} Q/day
                       </option>
                     ))}
                   </select>
                 ) : (
-                  <div className="p-3 bg-amber-50 rounded-lg border border-amber-300 text-xs text-amber-900 font-medium flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-amber-700 shrink-0" />
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/60 rounded-lg border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 font-medium flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0" />
                     <span>No registered procurement centres found for this location.</span>
                   </div>
                 )}
@@ -770,24 +770,24 @@ export const BookSlot: React.FC = () => {
 
               {/* Time Preference selection: Morning, Afternoon, No Preference */}
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300">
                   Time Preference
                 </label>
                 <select
                   value={timePreference}
                   onChange={(e) => setTimePreference(e.target.value as any)}
-                  className="w-full h-11 px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+                  className="w-full h-11 px-3 py-2 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-sm text-slate-900 dark:text-neutral-100 font-medium focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
                 >
-                  <option value="morning">Morning (9:00 AM – 2:00 PM)</option>
-                  <option value="afternoon">Afternoon (3:00 PM – 6:00 PM)</option>
-                  <option value="no_preference">No Preference (9:00 AM – 6:00 PM)</option>
+                  <option value="morning" className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">Morning (9:00 AM – 2:00 PM)</option>
+                  <option value="afternoon" className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">Afternoon (3:00 PM – 6:00 PM)</option>
+                  <option value="no_preference" className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">No Preference (9:00 AM – 6:00 PM)</option>
                 </select>
               </div>
             </div>
 
             {/* REAL-TIME AVAILABILITY STATUS BOX */}
-            <div className="p-3.5 rounded-xl border transition-colors bg-slate-50 border-slate-200">
-              <div className="flex items-center justify-between text-xs font-semibold pb-1.5 border-b border-slate-200">
+            <div className="p-3.5 rounded-xl border transition-colors bg-slate-50 dark:bg-neutral-950 border-slate-200 dark:border-neutral-800">
+              <div className="flex items-center justify-between text-xs font-semibold pb-1.5 border-b border-slate-200 dark:border-neutral-800">
                 <span className="text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-emerald-700" />
                   Mandi Slot Availability Check

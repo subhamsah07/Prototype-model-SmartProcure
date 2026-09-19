@@ -16,14 +16,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-slate-700">
+          <label htmlFor={inputId} className="block text-sm font-medium text-slate-700 dark:text-neutral-200">
             {label}
             {props.required && <span className="text-rose-500 ml-0.5">*</span>}
           </label>
         )}
         <div className="relative flex items-center">
           {leftIcon && (
-            <div className="absolute left-3 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute left-3 flex items-center pointer-events-none text-slate-400 dark:text-neutral-500">
               {leftIcon}
             </div>
           )}
@@ -32,7 +32,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             ref={ref}
             className={cn(
-              'flex h-11 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 transition-colors',
+              'flex h-11 w-full rounded-lg border border-slate-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3.5 py-2 text-sm text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 transition-colors',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
               error && 'border-rose-500 focus:ring-rose-500 focus:border-rose-500',
@@ -41,13 +41,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3 flex items-center text-slate-400">
+            <div className="absolute right-3 flex items-center text-slate-400 dark:text-neutral-500">
               {rightIcon}
             </div>
           )}
         </div>
         {error && <p className="text-xs text-rose-600 font-medium">{error}</p>}
-        {!error && helperText && <p className="text-xs text-slate-500">{helperText}</p>}
+        {!error && helperText && <p className="text-xs text-slate-500 dark:text-neutral-400">{helperText}</p>}
       </div>
     );
   }

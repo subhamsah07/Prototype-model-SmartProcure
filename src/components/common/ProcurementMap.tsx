@@ -148,7 +148,7 @@ export const ProcurementMap: React.FC<ProcurementMapProps> = ({
   }, [centres]);
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 ${className}`}>
+    <div className={`relative rounded-2xl overflow-hidden border border-slate-200 dark:border-neutral-700 bg-slate-100 dark:bg-neutral-800 ${className}`}>
       {/* Live Google Maps via @vis.gl/react-google-maps */}
       {isKeyAvailable ? (
         <div className="w-full h-full">

@@ -306,11 +306,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return error?.message || 'Authentication error occurred. Please try again.';
   };
 
-  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string; isEmailUnconfirmed?: boolean }> => {
+  const resolveEmailOrMobile = async (emailOrMobile: string): Promise<string> => {
+    const raw = emailOrMobile.trim();
+    if (raw.includes('@')) {
+      return raw;
+    }
+    const cleanDigits = raw.replace(/\D/g, '');
+    const cleanMobile = cleanDigits.slice(-10);
+    if (!cleanMobile) return raw;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('mobile', cleanMobile)
+          .maybeSingle();
+        if (data?.email) {
+          return data.email;
+        }
+      } catch (err) {
+        console.warn('Mobile resolution error:', err);
+      }
+    } else {
+      const mockPhone = ((MOCK_FARMER as any).mobileNumber || (MOCK_FARMER as any).mobile || '')?.replace(/\D/g, '').slice(-10);
+      if (cleanMobile === mockPhone) {
+        return MOCK_FARMER.email;
+      }
+      return `${cleanMobile}@farmer.smartprocure.gov.in`;
+    }
+    return raw;
+  };
+
+  const signIn = async (emailOrMobile: string, password: string): Promise<{ success: boolean; error?: string; isEmailUnconfirmed?: boolean }> => {
     setIsLoading(true);
+    const cleanEmail = await resolveEmailOrMobile(emailOrMobile);
 
     if (!isSupabaseConfigured()) {
-      const cleanEmail = email.trim();
       const demoProfile: FarmerProfile = cleanEmail.toLowerCase() === MOCK_FARMER.email.toLowerCase()
         ? MOCK_FARMER
         : {
@@ -340,7 +372,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password,
       });
 
@@ -748,13 +780,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+  const resetPassword = async (emailOrMobile: string): Promise<{ success: boolean; error?: string }> => {
     if (!isSupabaseConfigured()) {
       return { success: true };
     }
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      const cleanEmail = await resolveEmailOrMobile(emailOrMobile);
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail);
       if (error) {
         return { success: false, error: formatAuthError(error) };
       }

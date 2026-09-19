@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { SmartProcureLogo } from '../ui/SmartProcureLogo';
+import { BotanicalGrassTexture } from '../common/BotanicalGrassTexture';
 import { useAuth } from '../../contexts/AuthContext';
 import { notificationService } from '../../services/notificationService';
 import { LANGUAGES, SupportedLanguage } from '../../i18n';
@@ -148,15 +149,18 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
+    <div className="min-h-screen bg-[#f4f8f5] dark:bg-black text-slate-900 dark:text-neutral-100 flex flex-col transition-colors duration-200 relative overflow-x-hidden">
+      {/* Minimal Subtle Botanical Grass Texture */}
+      <BotanicalGrassTexture intensity="subtle" />
+
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur-xs">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-black/95 border-b border-slate-200 dark:border-neutral-800 backdrop-blur-xs">
         <div className="px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* LEFT: SmartProcure logo + SmartProcure */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="lg:hidden p-2 rounded-lg text-slate-600 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-900"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -175,13 +179,13 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
             {/* Notification Bell Icon */}
             <Link
               to="/farmer/notifications"
-              className="relative p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="relative p-2 rounded-lg text-slate-600 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors"
               title={t('nav.notifications', 'Notifications')}
               aria-label={t('nav.notifications', 'Notifications')}
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 rounded-full bg-orange-600 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
+                <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 rounded-full bg-orange-600 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-black">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -195,17 +199,17 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
                   setLangDropdownOpen(!langDropdownOpen);
                   setProfileDropdownOpen(false);
                 }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-slate-700 dark:text-neutral-200 hover:bg-slate-50 dark:hover:bg-neutral-900 text-xs font-semibold transition-colors"
                 aria-label="Select Language"
               >
-                <Globe className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                <Globe className="h-3.5 w-3.5 text-slate-500 dark:text-neutral-400" />
                 <span className="hidden sm:inline">
                   {LANGUAGES.find((l) => l.code === currentLang)?.nativeName || 'English'}
                 </span>
               </button>
 
               {langDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl py-1 z-50 text-xs">
+                <div className="absolute right-0 mt-2 w-36 rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-xl py-1 z-50 text-xs">
                   {LANGUAGES.map((lang) => (
                     <button
                       key={lang.code}
@@ -214,7 +218,7 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
                       className={`w-full text-left px-3 py-2 flex items-center justify-between transition-colors ${
                         currentLang === lang.code
                           ? 'font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          : 'text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-900'
                       }`}
                     >
                       <span>{lang.nativeName}</span>
@@ -229,7 +233,7 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-slate-600 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors"
               aria-label={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
@@ -244,7 +248,7 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
                   setProfileDropdownOpen(!profileDropdownOpen);
                   setLangDropdownOpen(false);
                 }}
-                className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800 cursor-pointer focus:outline-none"
+                className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-neutral-800 cursor-pointer focus:outline-none"
                 aria-label="User profile"
               >
                 <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold flex items-center justify-center text-xs border border-emerald-300 dark:border-emerald-800">
@@ -256,28 +260,28 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
                     <ShieldCheck className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   </div>
                   {(farmerDistrict || farmerState) && (
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[120px]">
+                    <div className="text-[10px] text-slate-500 dark:text-neutral-400 truncate max-w-[120px]">
                       {farmerDistrict ? `${farmerDistrict}, ` : ''}{farmerState}
                     </div>
                   )}
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 hidden sm:block" />
+                <ChevronDown className="h-3.5 w-3.5 text-slate-400 dark:text-neutral-500 hidden sm:block" />
               </button>
 
               {profileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl py-2 z-50 text-xs">
-                  <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800">
+                <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-xl py-2 z-50 text-xs">
+                  <div className="px-3.5 py-2 border-b border-slate-100 dark:border-neutral-800">
                     <span className="font-bold text-slate-900 dark:text-white block truncate">
                       {farmerName}
                     </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">
+                    <span className="text-[11px] text-slate-500 dark:text-neutral-400 block truncate">
                       {user?.email || user?.phone || 'Verified Farmer'}
                     </span>
                   </div>
 
                   {maskedAcct && (
-                    <div className="px-3.5 py-2 text-[11px] text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                      <span className="block font-medium text-slate-700 dark:text-slate-300">{farmerBankName}</span>
+                    <div className="px-3.5 py-2 text-[11px] text-slate-500 dark:text-neutral-400 border-b border-slate-100 dark:border-neutral-800">
+                      <span className="block font-medium text-slate-700 dark:text-neutral-300">{farmerBankName}</span>
                       <span className="font-mono text-[10px]">{maskedAcct}</span>
                     </div>
                   )}
@@ -285,7 +289,7 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
                   <Link
                     to="/farmer/settings"
                     onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3.5 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    className="flex items-center gap-2 px-3.5 py-2 text-slate-700 dark:text-neutral-300 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors"
                   >
                     <Settings className="h-3.5 w-3.5 text-slate-400" />
                     <span>{t('nav.settings', 'Settings')}</span>
@@ -312,9 +316,9 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
       {/* Main App Body */}
       <div className="flex-1 flex pb-16 lg:pb-0">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex flex-col w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shrink-0">
+        <aside className="hidden lg:flex flex-col w-60 bg-white dark:bg-black border-r border-slate-200 dark:border-neutral-800 shrink-0">
           <div className="p-4 flex-1 space-y-1">
-            <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500">
               {t('nav.procurementServices', 'Procurement Services')}
             </div>
 
@@ -329,11 +333,11 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
                   className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     active
                       ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-200/70 dark:border-emerald-800/60'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+                      : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-neutral-900 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`h-4 w-4 ${active ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                    <Icon className={`h-4 w-4 ${active ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-400 dark:text-neutral-500'}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
@@ -347,10 +351,10 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
           </div>
 
           {/* Account & Logout in Sidebar */}
-          <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="p-4 border-t border-slate-200 dark:border-neutral-800 space-y-2">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-neutral-800 text-xs font-semibold text-slate-600 dark:text-neutral-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-neutral-700 transition-colors cursor-pointer"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span>{t('auth.signOut', 'Sign Out')}</span>
@@ -362,15 +366,15 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-50 lg:hidden flex">
             <div
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+              className="fixed inset-0 bg-black/75 backdrop-blur-xs"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <div className="relative w-72 max-w-[80vw] bg-white dark:bg-slate-900 h-full flex flex-col shadow-xl z-10 border-r border-slate-200 dark:border-slate-800">
-              <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div className="relative w-72 max-w-[80vw] bg-white dark:bg-black h-full flex flex-col shadow-xl z-10 border-r border-slate-200 dark:border-neutral-800">
+              <div className="p-4 border-b border-slate-200 dark:border-neutral-800 flex items-center justify-between">
                 <span className="font-bold text-sm text-slate-900 dark:text-white">SmartProcure</span>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-1 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="p-1 rounded-md text-slate-500 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-neutral-900"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -389,7 +393,7 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
                       className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium ${
                         active
                           ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          : 'text-slate-600 dark:text-neutral-400 hover:bg-slate-50 dark:hover:bg-neutral-900'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -406,7 +410,7 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
                 })}
               </div>
 
-              <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+              <div className="p-4 border-t border-slate-200 dark:border-neutral-800">
                 <Button variant="outline" size="sm" className="w-full justify-center" onClick={handleLogout}>
                   <LogOut className="h-3.5 w-3.5 mr-2" />
                   {t('auth.signOut', 'Sign Out')}
@@ -417,13 +421,13 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
         )}
 
         {/* Dynamic Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full relative z-10">
           {children}
         </main>
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-lg backdrop-blur-xs">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-black/95 border-t border-slate-200 dark:border-neutral-800 px-2 py-1.5 flex items-center justify-around shadow-lg backdrop-blur-xs">
         {navigationItems.slice(0, 5).map((item) => {
           const Icon = item.icon;
           const active = isItemActive(item.path, item.altPath);
@@ -433,13 +437,13 @@ export const FarmerLayout: React.FC<FarmerLayoutProps> = ({ children }) => {
               key={item.path}
               to={item.path}
               className={`flex flex-col items-center py-1 px-2 rounded-lg text-[10px] font-semibold transition-colors ${
-                active ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                active ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <div className="relative">
                 <Icon className={`h-5 w-5 ${active ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
                 {item.badge && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange-600 ring-1 ring-white dark:ring-slate-900" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange-600 ring-1 ring-white dark:ring-black" />
                 )}
               </div>
               <span className="mt-0.5">{item.label}</span>

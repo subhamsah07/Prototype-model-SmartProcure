@@ -171,17 +171,17 @@ export const FindCentre: React.FC = () => {
         {/* CONTROLS */}
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+          <div className="flex items-center bg-slate-100 dark:bg-neutral-800 p-1 rounded-xl border border-slate-200 dark:border-neutral-700 text-xs">
             <button
               type="button"
               onClick={() => setViewMode('split')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
                 viewMode === 'split'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-neutral-700 text-slate-900 dark:text-neutral-100 shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <MapIcon className="h-3.5 w-3.5 text-emerald-600" />
+              <MapIcon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Map & List</span>
             </button>
             <button
@@ -189,11 +189,11 @@ export const FindCentre: React.FC = () => {
               onClick={() => setViewMode('grid')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-neutral-700 text-slate-900 dark:text-neutral-100 shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-neutral-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <LayoutGrid className="h-3.5 w-3.5 text-slate-600" />
+              <LayoutGrid className="h-3.5 w-3.5 text-slate-600 dark:text-neutral-300" />
               <span>Cards Grid</span>
             </button>
           </div>
@@ -205,7 +205,7 @@ export const FindCentre: React.FC = () => {
             size="md"
             onClick={handleRequestLocation}
             disabled={geoStatus === 'requesting'}
-            className="gap-2 shadow-xs bg-white text-xs sm:text-sm"
+            className="gap-2 shadow-xs bg-white dark:bg-neutral-800 border-slate-300 dark:border-neutral-700 text-slate-700 dark:text-neutral-200 hover:dark:bg-neutral-700 text-xs sm:text-sm"
           >
             {geoStatus === 'requesting' ? (
               <>
@@ -219,7 +219,7 @@ export const FindCentre: React.FC = () => {
               </>
             ) : (
               <>
-                <Navigation className="h-4 w-4 text-emerald-600" />
+                <Navigation className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Centres Near Me</span>
               </>
             )}
@@ -229,26 +229,26 @@ export const FindCentre: React.FC = () => {
 
       {/* GEOLOCATION FEEDBACK BANNER */}
       {geoError && (
-        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-xs text-amber-900 flex items-start gap-2.5">
-          <AlertCircle className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
+        <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+          <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
           <div>{geoError}</div>
         </div>
       )}
 
       {/* FILTER BAR: STATE & DISTRICT (FROM DISTRICTS MASTER TABLE) */}
-      <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
+      <div className="p-4 rounded-xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-xs space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
         {/* State Selection */}
         <div className="flex-1 sm:max-w-xs space-y-1">
-          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+          <label className="text-[11px] font-bold text-slate-600 dark:text-neutral-300 uppercase tracking-wider block">
             State Jurisdiction
           </label>
           <select
             value={selectedState}
             onChange={(e) => setSelectedState(e.target.value as IndianState)}
-            className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full h-10 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 px-3 text-sm text-slate-900 dark:text-neutral-100 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             {ADMIN_STATES.map((st) => (
-              <option key={st} value={st}>
+              <option key={st} value={st} className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">
                 {st}
               </option>
             ))}
@@ -258,11 +258,11 @@ export const FindCentre: React.FC = () => {
         {/* District Selection from Master Database */}
         <div className="flex-1 sm:max-w-xs space-y-1">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            <label className="text-[11px] font-bold text-slate-600 dark:text-neutral-300 uppercase tracking-wider block">
               District
             </label>
             {isLoadingDistricts && (
-              <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
                 <Loader2 className="h-3 w-3 animate-spin" /> Loading districts...
               </span>
             )}
@@ -272,13 +272,13 @@ export const FindCentre: React.FC = () => {
             value={selectedDistrict}
             onChange={(e) => setSelectedDistrict(e.target.value)}
             disabled={isLoadingDistricts}
-            className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-50"
+            className="w-full h-10 rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 px-3 text-sm text-slate-900 dark:text-neutral-100 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 dark:disabled:bg-neutral-900"
           >
-            <option key="all" value="all">
+            <option key="all" value="all" className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">
               All Districts in {selectedState} ({districts.length})
             </option>
             {districts.map((d) => (
-              <option key={d.id || d.districtCode || d.districtName} value={d.districtName}>
+              <option key={d.id || d.districtCode || d.districtName} value={d.districtName} className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">
                 {d.districtName}
               </option>
             ))}
@@ -291,7 +291,7 @@ export const FindCentre: React.FC = () => {
             variant="ghost"
             size="md"
             onClick={handleResetFilters}
-            className="text-xs text-slate-600 gap-1.5"
+            className="text-xs text-slate-600 dark:text-neutral-300 hover:dark:bg-neutral-800 gap-1.5"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             <span>Reset</span>
@@ -300,8 +300,8 @@ export const FindCentre: React.FC = () => {
       </div>
 
       {/* OPERATING HOURS NOTICE */}
-      <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2.5">
-        <Clock className="h-4 w-4 text-emerald-700 shrink-0 mt-0.5" />
+      <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 flex items-start gap-2.5">
+        <Clock className="h-4 w-4 text-emerald-700 dark:text-emerald-400 shrink-0 mt-0.5" />
         <div>
           <strong>Standard Mandi Operating Hours:</strong> Intake gates operate between{' '}
           <strong>09:00 AM – 06:00 PM</strong>. Weighbridge systems observe daily lunch recess between{' '}
@@ -312,11 +312,11 @@ export const FindCentre: React.FC = () => {
       {/* GOOGLE MAPS VISUALIZATION OF PROCUREMENT CENTRES */}
       {viewMode === 'split' && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-            <span className="font-semibold text-slate-700">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-neutral-400 px-1">
+            <span className="font-semibold text-slate-700 dark:text-neutral-200">
               Procurement Centre Map ({centres.length} Verified Mandi{centres.length === 1 ? '' : 's'})
             </span>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-400 dark:text-neutral-400">
               Select any pin or card to inspect details
             </span>
           </div>
@@ -342,11 +342,11 @@ export const FindCentre: React.FC = () => {
 
       {/* ERROR STATE */}
       {!isLoadingCentres && fetchError && (
-        <div className="p-8 text-center rounded-2xl bg-white border border-red-200 space-y-4">
+        <div className="p-8 text-center rounded-2xl bg-white dark:bg-neutral-900 border border-red-200 dark:border-red-900/50 space-y-4">
           <AlertCircle className="h-10 w-10 text-red-500 mx-auto" />
           <div>
-            <h3 className="text-base font-bold text-slate-900">Failed to Load Centres</h3>
-            <p className="text-xs text-slate-500 mt-1">{fetchError}</p>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Failed to Load Centres</h3>
+            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">{fetchError}</p>
           </div>
           <Button variant="outline" size="sm" onClick={loadCentres} className="gap-2">
             <RefreshCw className="h-4 w-4" />
@@ -357,18 +357,18 @@ export const FindCentre: React.FC = () => {
 
       {/* MANDATED EMPTY STATE WHEN DISTRICT HAS NO REGISTERED CENTRES */}
       {!isLoadingCentres && !fetchError && centres.length === 0 && (
-        <div className="p-12 text-center rounded-2xl bg-white border border-slate-200 space-y-4 shadow-xs">
-          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+        <div className="p-12 text-center rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 space-y-4 shadow-xs">
+          <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-neutral-800 flex items-center justify-center mx-auto text-slate-400 dark:text-neutral-400">
             <Building className="h-6 w-6" />
           </div>
           <div className="max-w-md mx-auto">
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
               {selectedDistrict !== 'all' ? selectedDistrict : selectedState}
             </h3>
-            <p className="text-sm font-medium text-slate-700 mt-1.5">
+            <p className="text-sm font-medium text-slate-700 dark:text-neutral-300 mt-1.5">
               No verified procurement centre is currently registered in this district.
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
               Procurement centres are registered by State Agricultural Marketing Boards. You may view all verified centres in {selectedState} or select an adjacent district.
             </p>
           </div>
@@ -458,17 +458,17 @@ export const FindCentre: React.FC = () => {
 
                 <CardContent className="space-y-4 pt-0">
                   {/* Operating Hours & Certified Capacity */}
-                  <div className="p-3 bg-slate-50 rounded-lg text-xs space-y-2 border border-slate-100">
+                  <div className="p-3 bg-slate-50 dark:bg-neutral-800/90 rounded-lg text-xs space-y-2 border border-slate-100 dark:border-neutral-700/60">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-500">Operating Hours:</span>
-                      <span className="font-semibold text-slate-800">
+                      <span className="text-slate-500 dark:text-neutral-400">Operating Hours:</span>
+                      <span className="font-semibold text-slate-800 dark:text-neutral-200">
                         {centre.operatingHours.openTime} – {centre.operatingHours.closeTime}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200">
-                      <span className="text-slate-500">Daily Intake Capacity:</span>
-                      <span className="font-bold text-slate-900">
+                    <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200 dark:border-neutral-700">
+                      <span className="text-slate-500 dark:text-neutral-400">Daily Intake Capacity:</span>
+                      <span className="font-bold text-slate-900 dark:text-neutral-100">
                         {centre.capacityPerDayQuintals.toLocaleString()} Quintals
                       </span>
                     </div>

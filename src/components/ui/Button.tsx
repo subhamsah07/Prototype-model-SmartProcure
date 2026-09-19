@@ -13,9 +13,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: 'bg-emerald-700 text-white hover:bg-emerald-800 active:bg-emerald-900 shadow-sm',
-      secondary: 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200',
-      outline: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 shadow-xs',
-      ghost: 'text-slate-700 hover:bg-slate-100 active:bg-slate-200',
+      secondary: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 active:bg-emerald-200 border border-emerald-200 dark:border-emerald-800',
+      outline: 'border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-slate-700 dark:text-neutral-200 hover:bg-slate-50 dark:hover:bg-neutral-800 active:bg-slate-100 dark:active:bg-neutral-700 shadow-xs',
+      ghost: 'text-slate-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-800 active:bg-slate-200 dark:active:bg-neutral-700 hover:text-slate-900 dark:hover:text-white',
       destructive: 'bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 shadow-sm',
       accent: 'bg-amber-600 text-white hover:bg-amber-700 active:bg-amber-800 shadow-sm',
       orange: 'bg-orange-600 text-white hover:bg-orange-700 active:bg-orange-800 shadow-sm',

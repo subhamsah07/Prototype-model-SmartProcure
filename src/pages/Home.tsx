@@ -18,13 +18,18 @@ import {
   UserCheck,
   PhoneCall,
   Scale,
-  Zap,
-  ArrowUpRight
+  Sparkles,
+  ArrowUpRight,
+  Send,
+  MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
+import { LiveTextTicker } from '../components/landing/LiveTextTicker';
+import { MandiVideoPlayer } from '../components/landing/MandiVideoPlayer';
+import { HowToUseWalkthrough } from '../components/landing/HowToUseWalkthrough';
 
 export const Home: React.FC = () => {
   const { t } = useTranslation();
@@ -58,297 +63,172 @@ export const Home: React.FC = () => {
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = React.useState<number | null>(0);
 
-  // 8-step visual journey (with warm orange & yellow theme)
-  const farmerJourneySteps = [
-    {
-      num: 1,
-      title: t('landing.step1Title', 'Registration'),
-      desc: t('landing.step1Desc', 'Verify mobile number and link verified bank account.'),
-      icon: UserCheck,
-    },
-    {
-      num: 2,
-      title: t('landing.step2Title', 'Select Centre & Commodity'),
-      desc: t('landing.step2Desc', 'Choose nearest mandi and specify expected crop quantity.'),
-      icon: Building2,
-    },
-    {
-      num: 3,
-      title: t('landing.step3Title', 'Book Appointment'),
-      desc: t('landing.step3Desc', 'Pick your preferred delivery date with automated slot allocation.'),
-      icon: CalendarPlus,
-    },
-    {
-      num: 4,
-      title: t('landing.step4Title', 'Receive Token & QR'),
-      desc: t('landing.step4Desc', 'Get digital gate pass with allocated arrival window and QR pass.'),
-      icon: QrCode,
-    },
-    {
-      num: 5,
-      title: t('landing.step5Title', 'Arrive at Centre'),
-      desc: t('landing.step5Desc', 'Report to the mandi weighbridge at your assigned time window.'),
-      icon: Truck,
-    },
-    {
-      num: 6,
-      title: t('landing.step6Title', 'Live Queue Tracking'),
-      desc: t('landing.step6Desc', 'Monitor real-time position, velocity, and vehicles ahead.'),
-      icon: Activity,
-    },
-    {
-      num: 7,
-      title: t('landing.step7Title', 'Procurement Completed'),
-      desc: t('landing.step7Desc', 'Digital gross/tare weight logging and immediate J-Form slip.'),
-      icon: Scale,
-    },
-    {
-      num: 8,
-      title: t('landing.step8Title', 'Track Payment'),
-      desc: t('landing.step8Desc', 'Direct Benefit Transfer (DBT) directly into your bank account.'),
-      icon: CreditCard,
-    },
-  ];
+  // Contact quick message state
+  const [contactName, setContactName] = React.useState('');
+  const [contactEmail, setContactEmail] = React.useState('');
+  const [contactMessage, setContactMessage] = React.useState('');
+  const [contactSent, setContactSent] = React.useState(false);
 
-  // Exactly 6-block Process Flowchart
-  const processFlowSteps = [
-    {
-      stepNumber: '01',
-      title: t('landing.flowBook', 'Slot Booking'),
-      desc: 'Choose your crop, quantity, and convenient delivery date.',
-      icon: CalendarPlus,
-      colorClass: 'bg-blue-600 text-white',
-      badgeBg: 'bg-blue-100 text-blue-950 dark:bg-blue-950 dark:text-blue-200 border-blue-300 dark:border-blue-800',
-      glowBorder: 'hover:border-blue-500',
-    },
-    {
-      stepNumber: '02',
-      title: t('landing.flowScheduling', 'Smart Scheduling'),
-      desc: 'Dynamic algorithm calculates gate window to prevent overcrowding.',
-      icon: Zap,
-      colorClass: 'bg-violet-600 text-white',
-      badgeBg: 'bg-violet-100 text-violet-950 dark:bg-violet-950 dark:text-violet-200 border-violet-300 dark:border-violet-800',
-      glowBorder: 'hover:border-violet-500',
-    },
-    {
-      stepNumber: '03',
-      title: t('landing.flowToken', 'Digital Token'),
-      desc: 'Instant 6-digit gate code and secure QR pass delivered to phone.',
-      icon: QrCode,
-      colorClass: 'bg-amber-600 text-white',
-      badgeBg: 'bg-amber-100 text-amber-950 dark:bg-amber-950 dark:text-amber-200 border-amber-300 dark:border-amber-800',
-      glowBorder: 'hover:border-amber-500',
-    },
-    {
-      stepNumber: '04',
-      title: t('landing.flowCheckIn', 'Mandi Check-In'),
-      desc: 'Seamless entry scan at weighbridge gate without overnight waiting.',
-      icon: Truck,
-      colorClass: 'bg-emerald-600 text-white',
-      badgeBg: 'bg-emerald-100 text-emerald-950 dark:bg-emerald-950 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800',
-      glowBorder: 'hover:border-emerald-500',
-    },
-    {
-      stepNumber: '05',
-      title: t('landing.flowProcurement', 'Weighing & Quality'),
-      desc: 'Precise electronic scale reading, moisture test, and digital J-Form.',
-      icon: Scale,
-      colorClass: 'bg-cyan-600 text-white',
-      badgeBg: 'bg-cyan-100 text-cyan-950 dark:bg-cyan-950 dark:text-cyan-200 border-cyan-300 dark:border-cyan-800',
-      glowBorder: 'hover:border-cyan-500',
-    },
-    {
-      stepNumber: '06',
-      title: t('landing.flowPayment', 'Direct Bank Payout'),
-      desc: 'MSP transfer deposited directly via DBT into verified account.',
-      icon: CreditCard,
-      colorClass: 'bg-rose-600 text-white',
-      badgeBg: 'bg-rose-100 text-rose-950 dark:bg-rose-950 dark:text-rose-200 border-rose-300 dark:border-rose-800',
-      glowBorder: 'hover:border-rose-500',
-    },
-  ];
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setContactSent(true);
+    setTimeout(() => {
+      setContactSent(false);
+      setContactName('');
+      setContactEmail('');
+      setContactMessage('');
+    }, 3000);
+  };
 
-  // Core Benefits (Expanded to exactly 6 blocks for an even 3x2 grid, each with a colorful logo)
-  const benefits = [
+  // 6 Previous Core Points for "Why SmartProcure" with High-Impact Red, Orange, Yellow & Green Color Combinations
+  const whyPoints = [
     {
-      title: t('landing.benefit1Title', 'Reduced Waiting Time'),
-      desc: t(
-        'landing.benefit1Desc',
-        'Eliminate 14+ hour overnight tractor queue-ups. Arrive right when the weighbridge is ready for you.'
-      ),
+      title: t('landing.whyPoint1', 'Less Waiting'),
+      desc: t('landing.whyPoint1Desc', 'Eliminates overnight tractor queues. Arrive during your verified scheduled window.'),
       icon: Clock,
-      stat: '75% Faster',
-      iconBg: 'bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800',
-      statColor: 'text-amber-700 dark:text-amber-400',
+      stat: '0 Overnight Delay',
+      iconBg: 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-400/40 shadow-xs',
+      statColor: 'text-red-600 dark:text-red-400',
+      badge: 'Immediate Gate Entry',
+      badgeClass: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/40',
+      cardHover: 'hover:border-red-500 dark:hover:border-red-600 hover:shadow-red-900/20'
     },
     {
-      title: t('landing.benefit2Title', 'Transparent Queue'),
-      desc: t(
-        'landing.benefit2Desc',
-        'Algorithmic token sequencing prevents queue jumping, middlemen bias, and arbitrary delays.'
-      ),
+      title: t('landing.whyPoint2', 'Transparent Queue'),
+      desc: t('landing.whyPoint2Desc', 'Algorithmic turn allocation ensures zero favoritism or arbitrary queue jumping.'),
       icon: ShieldCheck,
-      stat: '100% Fair',
-      iconBg: 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800',
-      statColor: 'text-emerald-700 dark:text-emerald-400',
+      stat: 'Zero Favoritism & Bias',
+      iconBg: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-400/40 shadow-xs',
+      statColor: 'text-orange-600 dark:text-orange-400',
+      badge: 'Algorithmic Queue',
+      badgeClass: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/40',
+      cardHover: 'hover:border-orange-500 dark:hover:border-orange-600 hover:shadow-orange-900/20'
     },
     {
-      title: t('landing.benefit3Title', 'Real-Time Updates'),
-      desc: t(
-        'landing.benefit3Desc',
-        'Live queue tracking dynamically recalculates your ETA based on active mandi unloading speed.'
-      ),
-      icon: TrendingUp,
-      stat: 'Live ETA',
-      iconBg: 'bg-blue-100 dark:bg-blue-950/70 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800',
-      statColor: 'text-blue-700 dark:text-blue-400',
+      title: t('landing.whyPoint3', 'Real-Time Updates'),
+      desc: t('landing.whyPoint3Desc', 'Dynamic ETAs update automatically if weighbridge operations encounter delays.'),
+      icon: Activity,
+      stat: 'Live Dynamic ETA',
+      iconBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-400/40 shadow-xs',
+      statColor: 'text-amber-700 dark:text-amber-300',
+      badge: 'Live Status Alerts',
+      badgeClass: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40',
+      cardHover: 'hover:border-amber-500 dark:hover:border-amber-600 hover:shadow-amber-900/20'
     },
     {
-      title: t('landing.benefit4Title', 'IVR Support'),
-      desc: t(
-        'landing.benefit4Desc',
-        'IVR support which helps rural farmers to book appointments and timely updates regarding procurement.'
-      ),
+      title: t('landing.whyPoint4', 'IVR Support'),
+      desc: t('landing.whyPoint4Desc', 'IVR support which helps rural farmers book appointments and receive timely updates regarding procurement.'),
       icon: PhoneCall,
-      stat: 'Toll-Free IVR',
-      iconBg: 'bg-violet-100 dark:bg-violet-950/70 text-violet-800 dark:text-violet-300 border border-violet-300 dark:border-violet-800',
-      statColor: 'text-violet-700 dark:text-violet-400',
+      stat: '1800-180-1551 Toll-Free',
+      iconBg: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-400/40 shadow-xs',
+      statColor: 'text-emerald-700 dark:text-emerald-400',
+      badge: '24x7 Rural Hotline',
+      badgeClass: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+      cardHover: 'hover:border-emerald-500 dark:hover:border-emerald-600 hover:shadow-emerald-900/20'
     },
     {
-      title: t('landing.benefit5Title', 'Payment Clarity'),
-      desc: t(
-        'landing.benefit5Desc',
-        'Instant digital receipts with real-time DBT fund clearance tracking directly to your registered bank.'
-      ),
+      title: t('landing.whyPoint5', 'Payment Visibility'),
+      desc: t('landing.whyPoint5Desc', 'End-to-end DBT bank credit tracking with instant digital receipt issuance.'),
       icon: CreditCard,
-      stat: 'Direct Bank Credit',
-      iconBg: 'bg-teal-100 dark:bg-teal-950/70 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800',
-      statColor: 'text-teal-700 dark:text-teal-400',
+      stat: '48-72h Direct DBT Credit',
+      iconBg: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border border-yellow-400/40 shadow-xs',
+      statColor: 'text-yellow-700 dark:text-yellow-400',
+      badge: 'Verified Bank PFMS',
+      badgeClass: 'bg-yellow-500/15 text-yellow-800 dark:text-yellow-300 border-yellow-500/40',
+      cardHover: 'hover:border-yellow-500 dark:hover:border-yellow-600 hover:shadow-yellow-900/20'
     },
     {
-      title: t('landing.benefit6Title', 'Zero Middlemen'),
-      desc: t(
-        'landing.benefit6Desc',
-        'Direct farmer-to-mandi procurement eliminates unauthorized agents, illicit cuts, and unfair bias.'
-      ),
-      icon: UserCheck,
-      stat: '100% Direct MSP',
-      iconBg: 'bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800',
-      statColor: 'text-rose-700 dark:text-rose-400',
+      title: t('landing.whyPoint6', 'Zero Middlemen'),
+      desc: t('landing.whyPoint6Desc', 'Direct farmer-to-mandi procurement eliminates unauthorized agents, illicit cuts, and unfair bias.'),
+      icon: Scale,
+      stat: '100% Direct MSP Payout',
+      iconBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-400/40 shadow-xs',
+      statColor: 'text-rose-600 dark:text-rose-400',
+      badge: 'No Middlemen Cuts',
+      badgeClass: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40',
+      cardHover: 'hover:border-rose-500 dark:hover:border-rose-600 hover:shadow-rose-900/20'
     },
   ];
 
-  // FAQ list
+  // 6 Major FAQ Questions
   const faqs = [
     {
-      q: t('landing.faq1Q', 'How do I register as a farmer?'),
-      a: t(
-        'landing.faq1A',
-        'Click on "Register as New Farmer" on the home page. Enter your mobile number, verify via OTP, and enter your district, landholding, and bank account details for direct payments.'
-      ),
+      q: 'How do I book an arrival slot for my crop at the mandi?',
+      a: 'Log in with your registered mobile number on the Farmer Portal. Select your commodity (Wheat, Paddy, Mustard, Maize), specify your expected harvest weight in quintals, and pick a convenient date and 1-hour gate arrival slot. Your encrypted QR token is generated immediately.',
     },
     {
-      q: t('landing.faq2Q', "What if I can't log in?"),
-      a: t(
-        'landing.faq2A',
-        'Ensure you enter the mobile number registered during onboarding. You can log in using either your secure password or instant SMS OTP verification.'
-      ),
+      q: 'What happens if I reach the mandi earlier or later than my scheduled slot?',
+      a: 'SmartProcure provides a 30-minute grace buffer for road delays. If you arrive early, the electronic gate system queues your vehicle in the designated holding bay. If you miss your window due to emergency weather or transport breakdown, you can reschedule in 1-click without penalty.',
     },
     {
-      q: t('landing.faq3Q', 'How do I book a procurement appointment?'),
-      a: t(
-        'landing.faq3A',
-        'Log in to your Farmer Dashboard, click "Book Appointment", choose your crop (e.g. Wheat, Paddy, Mustard, Maize), specify estimated quintals, and pick an available date.'
-      ),
+      q: 'How is the Minimum Support Price (MSP) guaranteed and protected from cuts?',
+      a: 'Every procurement centre runs under government agency oversight (FCI, State Civil Supplies). The official MSP rate is digitally locked in the system upon booking. Weight is captured automatically via calibrated electronic weighbridges without manual tampering, generating an official electronic J-Form.',
     },
     {
-      q: t('landing.faq4Q', 'Where do I find my token and QR code?'),
-      a: t(
-        'landing.faq4A',
-        'Immediately after booking, your secure 6-character token (e.g., SP7K4Q) and scannable QR pass are available directly on your Farmer Dashboard under Active Bookings.'
-      ),
+      q: 'What documents or items do I need to bring to the mandi gate?',
+      a: 'Bring your tractor or delivery vehicle, your digital QR Token (saved on your phone or printed SMS pass), and your Aadhaar or Kisan Passbook for fast identity verification at the express lane scanner.',
     },
     {
-      q: t('landing.faq5Q', 'How can I see my live queue status?'),
-      a: t(
-        'landing.faq5A',
-        'On your scheduled appointment day, go to the "Live Queue Tracker" page. It shows exactly how many vehicles are ahead of you, current weighbridge speed, and your estimated wait time.'
-      ),
+      q: 'When and how will my procurement payment be deposited?',
+      a: 'As soon as the net weight and moisture verification are approved, a digital J-Form is generated. Funds are disbursed through the Public Financial Management System (PFMS) via Direct Benefit Transfer (DBT) directly into your linked bank account within 48 to 72 hours.',
     },
     {
-      q: t('landing.faq6Q', 'What happens if my payment is delayed?'),
-      a: t(
-        'landing.faq6A',
-        'Procurement payments are issued via Direct Benefit Transfer (DBT) within 48 to 72 hours of weighing. You can track status on your dashboard or contact our support team.'
-      ),
+      q: 'Can farmers without smartphones book an appointment?',
+      a: 'Yes. Farmers can call our 24x7 toll-free IVR Kisan Helpline at 1800-180-1551 or visit their local Gram Panchayat / Common Service Centre (CSC) to book appointment slots and receive SMS token confirmations on basic feature phones.',
     },
   ];
 
   return (
     <div
       className={`min-h-screen transition-colors duration-200 flex flex-col font-sans ${
-        darkMode ? 'bg-slate-950 text-slate-100' : 'bg-[#FAFAF9] text-slate-900'
+        darkMode
+          ? 'bg-black text-slate-100'
+          : 'bg-[#fbfbfa] text-slate-900'
       }`}
     >
       {/* 1. TOP NAVIGATION BAR */}
       <Navbar darkMode={darkMode} onToggleTheme={toggleTheme} />
 
-      <main className="grow">
-        {/* 2. HERO SECTION: CENTERED HEADLINE + CENTERED MAIZE IMAGE + WORKING FARMER IMAGE BELOW */}
-        <section className="relative overflow-hidden pt-8 pb-16 sm:pt-12 sm:pb-20">
-          {/* Subtle Ambient Background Gradients */}
-          <div
-            className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
-              darkMode
-                ? 'opacity-30 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-amber-950/40 via-slate-950 to-slate-950'
-                : 'opacity-40 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-amber-100/60 via-yellow-50/40 to-transparent'
-            }`}
-          />
+      {/* 2. LIVE TEXT ANIMATION (Running Ticker Directly Under Header) */}
+      <LiveTextTicker darkMode={darkMode} />
 
+      <main className="grow">
+        {/* 3. MAIN BANNER & MEDIA SECTION */}
+        <section className="relative overflow-hidden pt-4 pb-14 sm:pt-6 sm:pb-20">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
-            {/* Centered Top Heading Content */}
-            <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
-              {/* Government / Agri Initiative Badge */}
+            {/* Centered Main Title with Red, Orange, Yellow Accents */}
+            <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
               <div
-                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border tracking-wide mb-4 ${
+                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black tracking-wide mb-3 border shadow-sm ${
                   darkMode
-                    ? 'bg-amber-950/80 text-amber-300 border-amber-700'
-                    : 'bg-amber-100/90 text-amber-950 border-amber-300 shadow-2xs'
+                    ? 'bg-gradient-to-r from-red-950/70 via-orange-950/70 to-amber-950/70 text-amber-300 border-orange-500/40'
+                    : 'bg-gradient-to-r from-red-50 via-orange-50 to-amber-50 text-orange-950 border-orange-300'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span>{t('landing.heroBadge', 'Smart Agriculture Mandi Queue Management')}</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                <span className="uppercase tracking-wider">Government Grain Procurement & Queue Automation</span>
               </div>
 
-              {/* Primary Hero Headline */}
               <h1
                 className={`text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.15] mb-4 ${
                   darkMode ? 'text-white' : 'text-slate-950'
                 }`}
               >
-                {t(
-                  'landing.heroHeadline',
-                  'Smart Mandi Scheduling. Transparent From Arrival to Payout.'
-                )}
+                Smart Mandi Scheduling. Transparent From Arrival to Payout.
               </h1>
 
-              {/* Short Clear Description - Darkened text for high contrast */}
               <p
-                className={`text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl mx-auto font-medium ${
-                  darkMode ? 'text-slate-200' : 'text-slate-800'
+                className={`text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl mx-auto font-semibold ${
+                  darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}
               >
-                {t(
-                  'landing.heroSubtitle',
-                  'Skip chaotic and congested mandi queues. SmartProcure assigns guaranteed delivery windows, delivers live weighbridge updates, and ensures direct MSP settlement without middleman bias.'
-                )}
+                Skip chaotic and congested mandi queues. SmartProcure assigns guaranteed delivery windows, delivers live weighbridge updates, and ensures direct MSP settlement without middleman bias.
               </p>
             </div>
 
-            {/* Centered Enlarged Maize Image with 2 CTA Buttons Inside (Quote removed) */}
+            {/* Image - 01: Centered Golden Maize Field Image with 2 Impactful CTA Buttons */}
             <div className="max-w-5xl mx-auto">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200/90 dark:border-slate-800 group">
-                {/* Maize Field Image */}
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-orange-500/30 dark:border-neutral-800 group">
                 <img
                   src="/pexels-todd-trapani-488382-1382102.jpg"
                   alt="Golden maize crop field in agricultural India"
@@ -358,27 +238,27 @@ export const Home: React.FC = () => {
                 />
 
                 {/* Dark Gradient Overlay for optimal legibility */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
 
-                {/* Top Badge Overlay */}
+                {/* Top Badge Overlay with Red & Yellow highlights */}
                 <div className="absolute top-4 sm:top-6 left-4 sm:left-6 right-4 sm:right-6 flex items-center justify-between">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/70 backdrop-blur-md text-white text-xs font-bold border border-white/20 shadow-md">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                    <span>Real-Time Mandi Gate Scheduling</span>
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-600 text-white text-xs font-black tracking-wider shadow-lg border border-red-400/50">
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    <span>LIVE MANDI GATE ACTIVE</span>
                   </div>
 
-                  <span className="hidden sm:inline-block text-xs font-bold text-amber-300 bg-black/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 shadow-md">
-                    MSP Guaranteed • Direct DBT
+                  <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-black text-slate-950 bg-amber-400 px-3.5 py-1.5 rounded-full shadow-lg border border-amber-300">
+                    100% GOVT MSP GUARANTEED • DIRECT DBT
                   </span>
                 </div>
 
-                {/* 2 Primary CTA Buttons Inside Maize Image (No Quote) */}
+                {/* 2 Primary CTA Buttons Inside Maize Image with Red, Orange, Yellow, Green Colors */}
                 <div className="absolute bottom-6 sm:bottom-10 left-4 sm:left-8 right-4 sm:right-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                   {/* CTA 1: Book Appointment */}
                   <Link to="/dashboard/book" className="w-full sm:w-auto">
                     <button
                       type="button"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-extrabold text-sm sm:text-base text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all shadow-xl hover:shadow-2xl cursor-pointer border border-amber-400/50"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-black text-sm sm:text-base text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition-all shadow-xl hover:shadow-2xl cursor-pointer border border-emerald-400/40"
                     >
                       <CalendarPlus className="h-5 w-5 shrink-0" />
                       <span>{t('landing.bookAppointment', 'Book Appointment')}</span>
@@ -386,13 +266,13 @@ export const Home: React.FC = () => {
                     </button>
                   </Link>
 
-                  {/* CTA 2: Register as New Farmer */}
+                  {/* CTA 2: Register as New Farmer (Vibrant Saffron-Orange & Golden-Yellow) */}
                   <Link to="/register" className="w-full sm:w-auto">
                     <button
                       type="button"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-extrabold text-sm sm:text-base text-slate-950 bg-white hover:bg-slate-100 active:bg-slate-200 transition-all shadow-xl hover:shadow-2xl cursor-pointer border border-white"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-black text-sm sm:text-base text-slate-950 bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 hover:from-orange-500 hover:to-amber-500 active:from-orange-600 active:to-amber-600 transition-all shadow-xl hover:shadow-2xl cursor-pointer border border-amber-300"
                     >
-                      <UserCheck className="h-5 w-5 shrink-0 text-amber-600" />
+                      <UserCheck className="h-5 w-5 shrink-0 text-slate-950" />
                       <span>{t('landing.registerFarmer', 'Register as New Farmer')}</span>
                     </button>
                   </Link>
@@ -400,279 +280,74 @@ export const Home: React.FC = () => {
               </div>
             </div>
 
-            {/* Working Farmer Image Below that */}
-            <div className="max-w-5xl mx-auto mt-8 sm:mt-10">
-              <div className="relative rounded-2xl overflow-hidden shadow-lg border border-slate-200/90 dark:border-slate-800 group">
-                <img
-                  src="/pexels-hson-32954665.jpg"
-                  alt="Hardworking farmer harvesting crop in the field"
-                  className="w-full h-56 sm:h-64 md:h-72 object-cover transition-transform duration-700 group-hover:scale-102"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                />
-
-                {/* Atmospheric gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-
-                {/* Bottom caption tribute with high contrast dark/light text */}
-                <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-white">
-                  <div>
-                    <div className="text-xs sm:text-sm font-extrabold tracking-wide text-amber-300 uppercase drop-shadow-sm">
-                      Honoring India&apos;s Annadata
-                    </div>
-                    <p className="text-xs sm:text-sm text-white font-medium drop-shadow-sm max-w-xl">
-                      Built to protect farmers from endless queues, unfair middleman commissions, and arbitrary gate delays.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="inline-flex items-center gap-1 text-xs font-bold px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/25 text-white shadow-sm">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                      100% Direct MSP Payout
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Video Player: High-Impact Mandi Walkthrough Video from user's provided media */}
+            <MandiVideoPlayer darkMode={darkMode} />
           </div>
         </section>
 
-        {/* 3. "HOW TO USE SMARTPROCURE" (Updated with Orange & Yellow Visual Theme) */}
-        <section
-          id="how-to-use"
-          className={`py-16 sm:py-20 border-t transition-colors duration-200 ${
-            darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-[#FFFDF7] border-amber-200/50'
-          }`}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-              <span
-                className={`inline-block text-xs font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full border mb-2 shadow-2xs ${
-                  darkMode
-                    ? 'bg-amber-950/90 text-amber-300 border-amber-700'
-                    : 'bg-amber-100 text-amber-950 border-amber-300'
-                }`}
-              >
-                Orange & Gold Harvest Workflow
-              </span>
-              <h2
-                className={`text-2xl sm:text-3xl md:text-4xl font-black tracking-tight mt-1 mb-3 ${
-                  darkMode ? 'text-white' : 'text-slate-950'
-                }`}
-              >
-                {t('landing.howToUseTitle', 'How to Use SmartProcure')}
-              </h2>
-              <p
-                className={`text-sm sm:text-base font-semibold ${
-                  darkMode ? 'text-slate-300' : 'text-slate-800'
-                }`}
-              >
-                {t(
-                  'landing.howToUseSubtitle',
-                  'A transparent 8-step journey from home registration to direct bank payout.'
-                )}
-              </p>
-            </div>
+        {/* 4. DEDICATED "HOW TO USE IT" ANIMATED VISUAL WALKTHROUGH */}
+        <HowToUseWalkthrough darkMode={darkMode} />
 
-            {/* 8-Step Grid with warm orange & yellow accents */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {farmerJourneySteps.map((step) => {
-                const IconComponent = step.icon;
-                return (
-                  <div
-                    key={step.num}
-                    className={`relative p-5 rounded-2xl border transition-all duration-200 hover:-translate-y-1 group ${
-                      darkMode
-                        ? 'bg-slate-900/90 border-amber-950/70 hover:border-amber-600 hover:shadow-lg hover:shadow-amber-950/30'
-                        : 'bg-white border-amber-200/90 hover:border-orange-400 hover:shadow-md hover:shadow-amber-500/10'
-                    }`}
-                  >
-                    {/* Top Row: Orange/Yellow Step Badge & Icon */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="font-mono text-xs font-black px-2.5 py-1 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs">
-                        Step 0{step.num}
-                      </span>
-                      <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-2xs group-hover:scale-105 transition-transform ${
-                          darkMode
-                            ? 'bg-amber-950/80 border-amber-800 text-amber-400'
-                            : 'bg-amber-100 border-amber-300 text-amber-900'
-                        }`}
-                      >
-                        <IconComponent className="h-5 w-5" />
-                      </div>
-                    </div>
-
-                    <h3
-                      className={`text-base font-bold mb-1.5 transition-colors ${
-                        darkMode
-                          ? 'text-white group-hover:text-amber-400'
-                          : 'text-slate-950 group-hover:text-amber-700'
-                      }`}
-                    >
-                      {step.title}
-                    </h3>
-                    <p
-                      className={`text-xs leading-relaxed font-semibold ${
-                        darkMode ? 'text-slate-300' : 'text-slate-800'
-                      }`}
-                    >
-                      {step.desc}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* 4. "HOW SMARTPROCURE WORKS" (Flow Chart / Process with Exactly 6 Blocks & Colorful Logos) */}
-        <section
-          id="how-it-works"
-          className={`py-16 sm:py-20 border-t transition-colors duration-200 ${
-            darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200/80'
-          }`}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-              <span
-                className={`text-xs font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full border inline-block mb-2 ${
-                  darkMode
-                    ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800'
-                    : 'text-emerald-950 bg-emerald-100 border-emerald-300'
-                }`}
-              >
-                Process Flowchart
-              </span>
-              <h2
-                className={`text-2xl sm:text-3xl md:text-4xl font-black tracking-tight mt-1 mb-3 ${
-                  darkMode ? 'text-white' : 'text-slate-950'
-                }`}
-              >
-                {t('landing.howItWorksTitle', 'How SmartProcure Works')}
-              </h2>
-              <p
-                className={`text-sm sm:text-base font-semibold ${
-                  darkMode ? 'text-slate-300' : 'text-slate-800'
-                }`}
-              >
-                {t(
-                  'landing.howItWorksSubtitle',
-                  'A synchronized digital pipeline connecting farmers directly with government procurement mandis.'
-                )}
-              </p>
-            </div>
-
-            {/* Exactly 6 Blocks Flowchart Grid with connecting indicators */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
-              {processFlowSteps.map((step, idx) => {
-                const IconComponent = step.icon;
-                return (
-                  <div
-                    key={step.stepNumber}
-                    className={`relative p-6 rounded-2xl border transition-all duration-200 hover:-translate-y-1 ${step.glowBorder} ${
-                      darkMode
-                        ? 'bg-slate-900 border-slate-800 hover:shadow-lg'
-                        : 'bg-white border-slate-300 shadow-2xs hover:shadow-md'
-                    }`}
-                  >
-                    {/* Top Row: Colorful Logo Icon & Step Number */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-xs ${step.colorClass}`}>
-                        <IconComponent className="h-6 w-6" />
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${step.badgeBg}`}>
-                          Phase {step.stepNumber}
-                        </span>
-                        {idx < 5 && (
-                          <span className={`hidden lg:inline-block ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>
-                            <ArrowRight className="h-4 w-4" />
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <h3
-                      className={`text-lg font-bold mb-2 ${
-                        darkMode ? 'text-white' : 'text-slate-950'
-                      }`}
-                    >
-                      {step.title}
-                    </h3>
-                    <p
-                      className={`text-xs sm:text-sm leading-relaxed font-semibold ${
-                        darkMode ? 'text-slate-300' : 'text-slate-800'
-                      }`}
-                    >
-                      {step.desc}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* 5. "WHY SMARTPROCURE" (Even 6 Blocks with Colorful Logos) */}
+        {/* 5. "WHY SMARTPROCURE" - 6 Key Points with previous items & impactful red, orange, yellow colors */}
         <section
           id="why-smartprocure"
-          className={`py-16 sm:py-20 border-t transition-colors duration-200 ${
-            darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200/80'
+          className={`py-16 sm:py-24 border-t transition-colors duration-200 ${
+            darkMode ? 'bg-black/60 border-neutral-800' : 'bg-white/80 border-emerald-100 shadow-2xs backdrop-blur-xs'
           }`}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
               <span
-                className={`text-xs font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full border inline-block mb-2 ${
+                className={`text-xs font-black uppercase tracking-wider px-3.5 py-1 rounded-full border inline-block mb-2 ${
                   darkMode
-                    ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800'
-                    : 'text-emerald-950 bg-emerald-100 border-emerald-300'
+                    ? 'text-amber-300 bg-amber-950/60 border-amber-800'
+                    : 'text-orange-900 bg-orange-100 border-orange-300'
                 }`}
               >
-                Core Advantages
+                Key Points & Advantages
               </span>
               <h2
                 className={`text-2xl sm:text-3xl md:text-4xl font-black tracking-tight mt-1 mb-3 ${
                   darkMode ? 'text-white' : 'text-slate-950'
                 }`}
               >
-                {t('landing.whyTitle', 'Why SmartProcure?')}
+                Why SmartProcure?
               </h2>
               <p
                 className={`text-sm sm:text-base font-semibold ${
-                  darkMode ? 'text-slate-300' : 'text-slate-800'
+                  darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}
               >
-                {t(
-                  'landing.whySubtitle',
-                  'Engineered specifically to dismantle mandi congestion and restore dignity to farmers.'
-                )}
+                Engineered specifically to dismantle mandi congestion, stop illegal cuts, and restore dignity to India&apos;s Annadatas.
               </p>
             </div>
 
-            {/* Even 3x2 Grid (6 Blocks) with colorful logos */}
+            {/* 3x2 Grid (6 Blocks) featuring previous points with high-impact colors */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {benefits.map((b) => {
+              {whyPoints.map((b) => {
                 const IconComponent = b.icon;
                 return (
                   <div
                     key={b.title}
-                    className={`p-6 rounded-2xl border flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 ${
+                    className={`p-6 rounded-2xl border-2 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 ${
                       darkMode
-                        ? 'bg-slate-900 border-slate-800 hover:border-slate-700 hover:shadow-md'
-                        : 'bg-[#F8FAFC] border-slate-300 hover:border-slate-400 hover:shadow-md'
+                        ? `bg-neutral-950/90 border-neutral-800 ${b.cardHover}`
+                        : `bg-white/95 border-slate-200/90 ${b.cardHover} hover:shadow-xl`
                     }`}
                   >
                     <div>
-                      {/* Colorful Logo Badge */}
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 shadow-2xs ${b.iconBg}`}>
-                        <IconComponent className="h-6 w-6" />
+                      {/* Top Row: Icon Badge & Status Tag */}
+                      <div className="flex items-center justify-between gap-2 mb-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${b.iconBg}`}>
+                          <IconComponent className="h-6 w-6" />
+                        </div>
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md border ${b.badgeClass}`}>
+                          {b.badge}
+                        </span>
                       </div>
 
                       <h3
-                        className={`text-lg font-bold mb-2 ${
+                        className={`text-lg font-black mb-2 ${
                           darkMode ? 'text-white' : 'text-slate-950'
                         }`}
                       >
@@ -680,7 +355,7 @@ export const Home: React.FC = () => {
                       </h3>
                       <p
                         className={`text-xs sm:text-sm leading-relaxed font-semibold ${
-                          darkMode ? 'text-slate-300' : 'text-slate-800'
+                          darkMode ? 'text-slate-300' : 'text-slate-700'
                         }`}
                       >
                         {b.desc}
@@ -688,14 +363,14 @@ export const Home: React.FC = () => {
                     </div>
 
                     <div
-                      className={`pt-5 mt-4 border-t flex items-center justify-between ${
-                        darkMode ? 'border-slate-800' : 'border-slate-200'
+                      className={`pt-4 mt-5 border-t flex items-center justify-between ${
+                        darkMode ? 'border-neutral-800' : 'border-slate-100'
                       }`}
                     >
                       <span className={`text-xs font-black ${b.statColor}`}>
                         {b.stat}
                       </span>
-                      <CheckCircle2 className={`h-4 w-4 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
+                      <CheckCircle2 className={`h-4 w-4 ${b.statColor}`} />
                     </div>
                   </div>
                 );
@@ -707,17 +382,17 @@ export const Home: React.FC = () => {
         {/* 6. FAQ SECTION (Accordion Style) */}
         <section
           id="faq"
-          className={`py-16 sm:py-20 border-t transition-colors duration-200 ${
-            darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50/50 border-slate-200/80'
+          className={`py-16 sm:py-24 border-t transition-colors duration-200 ${
+            darkMode ? 'bg-black/80 border-neutral-800' : 'bg-[#fafaf8]/90 border-slate-200'
           }`}
         >
           <div className="max-w-4xl mx-auto px-4 sm:px-6">
             <div className="text-center max-w-2xl mx-auto mb-12">
               <span
-                className={`text-xs font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full border inline-block mb-2 ${
+                className={`text-xs font-black uppercase tracking-wider px-3.5 py-1 rounded-full border inline-block mb-2 ${
                   darkMode
-                    ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800'
-                    : 'text-emerald-950 bg-emerald-100 border-emerald-300'
+                    ? 'text-amber-300 bg-amber-950/60 border-amber-800'
+                    : 'text-amber-900 bg-amber-100 border-amber-300'
                 }`}
               >
                 Got Questions?
@@ -727,22 +402,19 @@ export const Home: React.FC = () => {
                   darkMode ? 'text-white' : 'text-slate-950'
                 }`}
               >
-                {t('landing.faqTitle', 'Frequently Asked Questions')}
+                Frequently Asked Questions
               </h2>
               <p
                 className={`text-sm sm:text-base font-semibold ${
-                  darkMode ? 'text-slate-300' : 'text-slate-800'
+                  darkMode ? 'text-slate-300' : 'text-slate-700'
                 }`}
               >
-                {t(
-                  'landing.faqSubtitle',
-                  'Everything you need to know about slot booking, token passes, and payout verification.'
-                )}
+                Everything you need to know about slot booking, token passes, weighbridge protocol, and DBT payments.
               </p>
             </div>
 
             {/* Accordion List */}
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {faqs.map((faq, idx) => {
                 const isOpen = openFaq === idx;
                 return (
@@ -750,8 +422,8 @@ export const Home: React.FC = () => {
                     key={faq.q}
                     className={`rounded-xl border transition-colors ${
                       darkMode
-                        ? 'bg-slate-900/90 border-slate-800'
-                        : 'bg-white border-slate-300 shadow-2xs'
+                        ? 'bg-neutral-950 border-neutral-800'
+                        : 'bg-white border-slate-200 shadow-2xs'
                     }`}
                   >
                     <button
@@ -761,10 +433,10 @@ export const Home: React.FC = () => {
                         darkMode ? 'text-white' : 'text-slate-950'
                       }`}
                     >
-                      <span className={isOpen ? (darkMode ? 'text-emerald-400' : 'text-emerald-700') : ''}>
+                      <span className={isOpen ? (darkMode ? 'text-amber-400' : 'text-amber-800') : ''}>
                         {faq.q}
                       </span>
-                      <div className={`shrink-0 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                      <div className={`shrink-0 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>
                         {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                       </div>
                     </button>
@@ -781,8 +453,8 @@ export const Home: React.FC = () => {
                           <div
                             className={`px-4 sm:px-5 pb-5 pt-1 text-xs sm:text-sm leading-relaxed border-t font-semibold ${
                               darkMode
-                                ? 'border-slate-800 text-slate-300'
-                                : 'border-slate-200 text-slate-800'
+                                ? 'border-neutral-800 text-slate-300'
+                                : 'border-slate-100 text-slate-700'
                             }`}
                           >
                             {faq.a}
@@ -797,75 +469,189 @@ export const Home: React.FC = () => {
           </div>
         </section>
 
-        {/* 7. CONTACT US & SUPPORT */}
+        {/* 7. CONTACT US & SUPPORT (Email: smartprocurementsystem@gmail.com) */}
         <section
           id="contact"
-          className={`py-14 sm:py-16 border-t transition-colors duration-200 ${
-            darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200/80'
+          className={`py-16 sm:py-20 border-t transition-colors duration-200 ${
+            darkMode ? 'bg-black/60 border-neutral-800' : 'bg-white/90 border-slate-200'
           }`}
         >
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6">
             <div
-              className={`p-6 sm:p-8 rounded-2xl border text-center ${
+              className={`rounded-3xl border-2 p-6 sm:p-10 transition-all ${
                 darkMode
-                  ? 'bg-slate-900 border-slate-800'
-                  : 'bg-gradient-to-b from-white to-emerald-50/30 border-slate-200 shadow-2xs'
+                  ? 'bg-neutral-950 border-neutral-800 shadow-2xl'
+                  : 'bg-gradient-to-br from-orange-50/50 via-white to-amber-50/50 border-orange-200 shadow-lg'
               }`}
             >
-              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
-                <Mail className="h-6 w-6" />
-              </div>
-              <h3
-                className={`text-xl sm:text-2xl font-black mb-2 ${
-                  darkMode ? 'text-white' : 'text-slate-950'
-                }`}
-              >
-                {t('landing.contactTitle', 'Contact Us')}
-              </h3>
-              <p
-                className={`text-xs sm:text-sm max-w-md mx-auto mb-5 font-semibold ${
-                  darkMode ? 'text-slate-300' : 'text-slate-800'
-                }`}
-              >
-                {t(
-                  'landing.contactSubtitle',
-                  'Have questions, feedback, or need technical assistance with mandi scheduling?'
-                )}
-              </p>
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                {/* Left Info Column with Red and Orange accents */}
+                <div className="md:col-span-6 space-y-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-red-600 to-orange-600 text-white flex items-center justify-center shadow-md">
+                    <Mail className="h-6 w-6" />
+                  </div>
+                  <h3
+                    className={`text-2xl sm:text-3xl font-black tracking-tight ${
+                      darkMode ? 'text-white' : 'text-slate-950'
+                    }`}
+                  >
+                    Contact Support & Grievance Cell
+                  </h3>
+                  <p
+                    className={`text-xs sm:text-sm font-semibold leading-relaxed ${
+                      darkMode ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
+                    Have questions about procurement slots, weighbridge calibration, or direct benefit transfer (DBT)? Reach out to our dedicated support team directly.
+                  </p>
 
-              <a
-                href="mailto:smartprocurementsystem@gmail.com"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-2xs"
-              >
-                <Mail className="h-4 w-4" />
-                <span>smartprocurementsystem@gmail.com</span>
-                <ArrowUpRight className="h-4 w-4" />
-              </a>
+                  <div className="pt-2 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 shrink-0">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase font-extrabold text-slate-400">Official Support Email</div>
+                        <a
+                          href="mailto:smartprocurementsystem@gmail.com"
+                          className="text-xs sm:text-sm font-mono font-bold text-red-600 dark:text-red-400 hover:underline"
+                        >
+                          smartprocurementsystem@gmail.com
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
+                        <PhoneCall className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase font-extrabold text-slate-400">Toll-Free Kisan Helpline</div>
+                        <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                          1800-180-1551 • 0172-2704123
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Form Column: Quick Message */}
+                <div className="md:col-span-6">
+                  <div
+                    className={`p-5 sm:p-6 rounded-2xl border ${
+                      darkMode ? 'bg-black border-neutral-800' : 'bg-white border-slate-200 shadow-md'
+                    }`}
+                  >
+                    {contactSent ? (
+                      <div className="py-8 text-center space-y-3">
+                        <div className="w-12 h-12 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-500 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="h-6 w-6 animate-bounce" />
+                        </div>
+                        <h4 className="text-base font-bold text-emerald-700 dark:text-emerald-300">
+                          Message Dispatched to Help Desk
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          We will respond to your email with mandi support instructions shortly.
+                        </p>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleContactSubmit} className="space-y-3">
+                        <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-orange-500" />
+                          <span>Quick Mandi Inquiry</span>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                            Your Name / किसान का नाम
+                          </label>
+                          <input
+                            type="text"
+                            value={contactName}
+                            onChange={(e) => setContactName(e.target.value)}
+                            placeholder="e.g. Gurdeep Singh"
+                            className={`w-full px-3 py-2 text-xs rounded-lg border outline-none transition-colors ${
+                              darkMode
+                                ? 'bg-neutral-900 border-neutral-800 text-white focus:border-orange-500'
+                                : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-orange-600'
+                            }`}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                            Your Email Address
+                          </label>
+                          <input
+                            type="email"
+                            value={contactEmail}
+                            onChange={(e) => setContactEmail(e.target.value)}
+                            placeholder="e.g. farmer@example.com"
+                            className={`w-full px-3 py-2 text-xs rounded-lg border outline-none transition-colors ${
+                              darkMode
+                                ? 'bg-neutral-900 border-neutral-800 text-white focus:border-orange-500'
+                                : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-orange-600'
+                            }`}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                            Query / Message
+                          </label>
+                          <textarea
+                            value={contactMessage}
+                            onChange={(e) => setContactMessage(e.target.value)}
+                            rows={3}
+                            placeholder="Ask about weighbridge timing, token verification, or MSP..."
+                            className={`w-full p-2 text-xs rounded-lg border outline-none transition-colors ${
+                              darkMode
+                                ? 'bg-neutral-900 border-neutral-800 text-white focus:border-orange-500'
+                                : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-orange-600'
+                            }`}
+                            required
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="w-full py-2.5 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 hover:from-red-700 hover:to-orange-700 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          <span>Send to smartprocurementsystem@gmail.com</span>
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* 8. SIH / TEAM SECTION (Small, polished, professional) */}
+        {/* 8. SIH PROTOTYPE BADGE */}
         <section
-          className={`py-8 border-t transition-colors duration-200 ${
-            darkMode ? 'bg-slate-950 border-slate-900' : 'bg-slate-50 border-slate-200/60'
+          className={`py-6 border-t transition-colors duration-200 ${
+            darkMode ? 'bg-black border-neutral-800' : 'bg-slate-50/80 border-slate-200'
           }`}
         >
           <div className="max-w-4xl mx-auto px-4 sm:px-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
               <div>
-                <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                  SmartProcure
+                <div className="text-xs font-extrabold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+                  SmartProcure National Platform
                 </div>
-                <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  {t('landing.sihPrototype', 'Smart India Hackathon Prototype')}
+                <div className="text-sm font-bold text-slate-900 dark:text-white">
+                  Smart India Hackathon Prototype • Department of Food & Public Distribution
                 </div>
               </div>
 
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-600 dark:text-slate-400 font-semibold">{t('landing.teamLabel', 'Team')}:</span>
-                <span className="px-2.5 py-1 rounded-md font-bold tracking-wider bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-emerald-700 dark:text-emerald-400">
-                  {t('landing.teamName', 'INNOVEX')}
+                <span className="text-slate-500 dark:text-neutral-400 font-semibold">Team:</span>
+                <span className="px-2.5 py-1 rounded-md font-bold tracking-wider bg-white dark:bg-neutral-900 border border-orange-300 dark:border-neutral-800 text-orange-700 dark:text-orange-400">
+                  INNOVEX
                 </span>
               </div>
             </div>
@@ -878,3 +664,4 @@ export const Home: React.FC = () => {
     </div>
   );
 };
+

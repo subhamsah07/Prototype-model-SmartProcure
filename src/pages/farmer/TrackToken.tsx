@@ -44,9 +44,9 @@ export const TrackToken: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="p-16 rounded-2xl border border-slate-200 bg-white shadow-xs flex flex-col items-center justify-center text-center space-y-3 max-w-2xl mx-auto">
+      <div className="p-16 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs flex flex-col items-center justify-center text-center space-y-3 max-w-2xl mx-auto">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-        <p className="text-sm text-slate-500">Checking your active token status...</p>
+        <p className="text-sm text-slate-500 dark:text-neutral-400">Checking your active token status...</p>
       </div>
     );
   }
@@ -54,13 +54,13 @@ export const TrackToken: React.FC = () => {
   if (!booking) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="p-10 rounded-2xl border-2 border-dashed border-slate-200 bg-white shadow-xs flex flex-col items-center justify-center text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+        <div className="p-10 rounded-2xl border-2 border-dashed border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xs flex flex-col items-center justify-center text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-neutral-800 flex items-center justify-center text-slate-400 dark:text-neutral-500">
             <Activity className="h-7 w-7" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-xl font-bold text-slate-900">No active procurement token</h3>
-            <p className="text-sm text-slate-500 max-w-md">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">No active procurement token</h3>
+            <p className="text-sm text-slate-500 dark:text-neutral-400 max-w-md">
               You do not currently have a scheduled or active foodgrain slot to track. Book a procurement slot to obtain an ingress token.
             </p>
           </div>

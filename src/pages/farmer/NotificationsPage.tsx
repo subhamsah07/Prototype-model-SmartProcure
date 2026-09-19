@@ -61,18 +61,18 @@ export const NotificationsPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="p-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-center space-y-3">
+        <div className="p-12 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col items-center justify-center text-center space-y-3">
           <Loader2 className="h-6 w-6 animate-spin text-emerald-600" />
-          <p className="text-xs text-slate-500 dark:text-slate-400">Loading notifications...</p>
+          <p className="text-xs text-slate-500 dark:text-neutral-400">Loading notifications...</p>
         </div>
       ) : notifications.length === 0 ? (
-        <div className="p-12 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+        <div className="p-12 rounded-2xl border-2 border-dashed border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col items-center justify-center text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-neutral-900 flex items-center justify-center text-slate-400 dark:text-neutral-500">
             <Bell className="h-6 w-6" />
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-bold text-slate-800 dark:text-white">No notifications yet</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+            <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-sm">
               You will receive real-time notifications here when your slot is booked, procurement is completed, and payment is processed.
             </p>
           </div>
@@ -88,8 +88,8 @@ export const NotificationsPage: React.FC = () => {
                 key={n.id}
                 className={`p-4 sm:p-5 rounded-xl border transition-all ${
                   !n.isRead
-                    ? 'bg-white dark:bg-slate-900 border-emerald-500/60 dark:border-emerald-500/50 shadow-xs ring-1 ring-emerald-500/20'
-                    : 'bg-slate-50/70 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800'
+                    ? 'bg-white dark:bg-neutral-950 border-emerald-500/60 dark:border-emerald-500/50 shadow-xs ring-1 ring-emerald-500/20'
+                    : 'bg-slate-50/70 dark:bg-neutral-950/60 border-slate-200 dark:border-neutral-800'
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">

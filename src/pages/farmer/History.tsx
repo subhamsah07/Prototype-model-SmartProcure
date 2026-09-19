@@ -74,19 +74,19 @@ export const ProcurementHistory: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="p-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-center space-y-3">
+        <div className="p-12 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col items-center justify-center text-center space-y-3">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-          <p className="text-sm text-slate-500 dark:text-slate-400">Loading your official procurement records from database...</p>
+          <p className="text-sm text-slate-500 dark:text-neutral-400">Loading your official procurement records from database...</p>
         </div>
       ) : historyItems.length === 0 ? (
         /* CLEAN EMPTY STATE */
-        <div className="p-12 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500">
+        <div className="p-12 rounded-2xl border-2 border-dashed border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 flex flex-col items-center justify-center text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-neutral-900 flex items-center justify-center text-slate-400 dark:text-neutral-500">
             <HistoryIcon className="h-7 w-7" />
           </div>
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-slate-800 dark:text-white">No booking history yet</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
+            <p className="text-sm text-slate-500 dark:text-neutral-400 max-w-md">
               You do not have any recorded procurement bookings in the central system yet. Schedule a slot to begin government mandi procurement.
             </p>
           </div>
@@ -100,13 +100,13 @@ export const ProcurementHistory: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {historyItems.map((item) => (
-            <Card key={item.id} className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
-              <div className="bg-slate-900 text-white px-5 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <Card key={item.id} className="border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-sm overflow-hidden">
+              <div className="bg-black text-white px-5 py-3 flex flex-wrap items-center justify-between gap-3 text-xs border-b border-neutral-800">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-emerald-400 bg-slate-800 px-2.5 py-1 rounded">
+                  <span className="font-mono font-bold text-emerald-400 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded">
                     TOKEN: {item.token}
                   </span>
-                  <span className="font-semibold text-slate-300">
+                  <span className="font-semibold text-neutral-300">
                     Created: {new Date(item.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </span>
                 </div>

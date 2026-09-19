@@ -15,6 +15,9 @@ import {
   TrendingUp,
   Tag,
   XCircle,
+  Leaf,
+  Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '../../components/ui/Button';
@@ -595,21 +598,27 @@ export const FarmerDashboard: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* 1. GREETING */}
-      <section className="pt-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          {greetingText}, {farmerName}
-        </h1>
-        <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">
-          {t('dashboard.procurementStatusSubtitle', "Here's your procurement status.")}
-        </p>
+      <section className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-semibold border border-emerald-300/80 dark:border-emerald-800 mb-2">
+            <Leaf className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>SmartProcure Farmer Portal</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            {greetingText}, <span className="text-emerald-700 dark:text-emerald-400">{farmerName}</span>
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-neutral-400 mt-1 font-medium">
+            {t('dashboard.procurementStatusSubtitle', "Here's your procurement status.")}
+          </p>
+        </div>
       </section>
 
       {/* 2. LOADING STATE */}
       {isLoadingBooking && (
         <div className="space-y-4 animate-pulse">
-          <div className="h-44 rounded-2xl bg-slate-200 dark:bg-slate-800" />
-          <div className="h-36 rounded-2xl bg-slate-200 dark:bg-slate-800" />
-          <div className="h-24 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          <div className="h-44 rounded-2xl bg-slate-200 dark:bg-neutral-900" />
+          <div className="h-36 rounded-2xl bg-slate-200 dark:bg-neutral-900" />
+          <div className="h-24 rounded-2xl bg-slate-200 dark:bg-neutral-900" />
         </div>
       )}
 
@@ -629,7 +638,7 @@ export const FarmerDashboard: React.FC = () => {
 
       {/* 4. EMPTY STATE (NO ACTIVE BOOKING) */}
       {!isLoadingBooking && !bookingError && !booking && (
-        <div className="p-8 sm:p-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center space-y-4 shadow-xs">
+        <div className="p-8 sm:p-12 rounded-2xl border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-center space-y-4 shadow-xs">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center border border-orange-200 dark:border-orange-800/60">
             <CalendarPlus className="h-7 w-7" />
           </div>
@@ -637,7 +646,7 @@ export const FarmerDashboard: React.FC = () => {
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
               {t('dashboard.noActiveBookingTitle', 'No Active Procurement Booking')}
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed">
               {t('dashboard.noActiveBookingDesc', 'Book an appointment to start your procurement journey.')}
             </p>
           </div>
@@ -662,9 +671,9 @@ export const FarmerDashboard: React.FC = () => {
       {!isLoadingBooking && !bookingError && booking && (
         <>
           {/* Card: Current Booking */}
-          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <div className="rounded-2xl border border-slate-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-neutral-800 pb-3 mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
                 {t('dashboard.currentBooking', 'CURRENT BOOKING')}
               </span>
               {isProcurementFailed ? (
@@ -684,7 +693,7 @@ export const FarmerDashboard: React.FC = () => {
               {/* Booking Key Information */}
               <div className="space-y-3 flex-1 min-w-0">
                 <div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 block">{t('dashboard.crop', 'Crop')}</span>
+                  <span className="text-xs text-slate-500 dark:text-neutral-400 block">{t('dashboard.crop', 'Crop')}</span>
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                       {booking.cropName}
@@ -698,33 +707,33 @@ export const FarmerDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 block">{t('dashboard.quantity', 'Quantity')}</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">{t('dashboard.quantity', 'Quantity')}</span>
+                    <span className="font-bold text-slate-800 dark:text-neutral-200">
                       {booking.quantityQuintals} Quintal
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 block">{t('dashboard.appointment', 'Appointment')}</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">{t('dashboard.appointment', 'Appointment')}</span>
+                    <span className="font-bold text-slate-800 dark:text-neutral-200">
                       {appointmentFormatted}
                     </span>
                   </div>
                   <div className="sm:col-span-2">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 block">{t('dashboard.centre', 'Centre')}</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">{t('dashboard.centre', 'Centre')}</span>
+                    <span className="font-bold text-slate-800 dark:text-neutral-200 truncate block">
                       {booking.centreName}
                     </span>
                   </div>
                   {/* Simplified Estimated Price (Section 13) */}
-                  <div className="sm:col-span-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                  <div className="sm:col-span-2 pt-1 border-t border-slate-100 dark:border-neutral-800">
+                    <span className="text-xs text-slate-500 dark:text-neutral-400 block">
                       {t('dashboard.estimatedPrice', 'Estimated Price')}
                     </span>
                     <div className="flex items-baseline gap-2 flex-wrap mt-0.5">
                       <span className="text-lg sm:text-xl font-black text-orange-500 block">
                         ₹{estimatedPriceAmount.toLocaleString('en-IN')}
                       </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                      <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium">
                         ({booking.quantityQuintals} Quintals × ₹{effectiveCropRate.toLocaleString('en-IN')})
                       </span>
                     </div>
@@ -733,10 +742,10 @@ export const FarmerDashboard: React.FC = () => {
               </div>
 
               {/* Token + PIN + QR Code Container */}
-              <div className="flex flex-row flex-wrap items-center gap-3 w-full md:w-auto shrink-0 justify-center md:justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+              <div className="flex flex-row flex-wrap items-center gap-3 w-full md:w-auto shrink-0 justify-center md:justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-neutral-800">
                 {/* Compact Professional Token */}
-                <div className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 min-w-[110px]">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <div className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl bg-slate-100 dark:bg-neutral-900/80 border border-slate-200 dark:border-neutral-700 min-w-[110px]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
                     {t('dashboard.token', 'TOKEN')}
                   </span>
                   <span className="font-mono text-xl sm:text-2xl font-black tracking-wider text-slate-900 dark:text-white mt-0.5">
@@ -745,7 +754,7 @@ export const FarmerDashboard: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleCopyToken}
-                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
+                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
                   >
                     {tokenCopied ? (
                       <>
@@ -775,11 +784,11 @@ export const FarmerDashboard: React.FC = () => {
                 </div>
 
                 {/* QR Code */}
-                <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white dark:bg-neutral-900/80 border border-slate-200 dark:border-neutral-700 shadow-2xs">
                   <div className="p-1 bg-white rounded-lg">
                     <QRCodeSVG value={qrValue} size={90} level="M" />
                   </div>
-                  <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
+                  <span className="text-[9px] font-semibold text-slate-500 dark:text-neutral-400 mt-1">
                     {t('dashboard.entryQr', 'Entry QR')}
                   </span>
                 </div>
@@ -816,29 +825,29 @@ export const FarmerDashboard: React.FC = () => {
                   </h3>
                 </div>
                 {elapsedDisplay && (
-                  <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-white dark:bg-neutral-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                     Elapsed: {elapsedDisplay}
                   </span>
                 )}
               </div>
-              <p className="text-sm text-slate-700 dark:text-slate-300">
+              <p className="text-sm text-slate-700 dark:text-neutral-300">
                 {t('dashboard.processingDesc', 'Your procurement is currently being processed.')}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs border-t border-emerald-200/60 dark:border-emerald-900/60">
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400 block">{t('dashboard.token', 'Token')}</span>
+                  <span className="text-slate-500 dark:text-neutral-400 block">{t('dashboard.token', 'Token')}</span>
                   <span className="font-bold text-slate-900 dark:text-white text-sm">{booking.token}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400 block">{t('dashboard.centre', 'Centre')}</span>
+                  <span className="text-slate-500 dark:text-neutral-400 block">{t('dashboard.centre', 'Centre')}</span>
                   <span className="font-bold text-slate-900 dark:text-white text-sm truncate block">{booking.centreName}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400 block">{t('dashboard.crop', 'Crop')}</span>
+                  <span className="text-slate-500 dark:text-neutral-400 block">{t('dashboard.crop', 'Crop')}</span>
                   <span className="font-bold text-slate-900 dark:text-white text-sm">{booking.cropName}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400 block">{t('dashboard.quantity', 'Quantity')}</span>
+                  <span className="text-slate-500 dark:text-neutral-400 block">{t('dashboard.quantity', 'Quantity')}</span>
                   <span className="font-bold text-slate-900 dark:text-white text-sm">{booking.quantityQuintals} Quintal</span>
                 </div>
               </div>
@@ -847,31 +856,31 @@ export const FarmerDashboard: React.FC = () => {
 
           {/* STATE: COMPLETED (Section 11) */}
           {currentStatus === 'COMPLETED' && (
-            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-3 shadow-xs">
+            <div className="rounded-2xl border border-slate-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 sm:p-6 space-y-3 shadow-xs">
               <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
                 <CheckCircle2 className="h-5 w-5" />
                 <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                   {t('dashboard.procurementCompleted', '✓ Procurement Completed')}
                 </h3>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="text-sm text-slate-600 dark:text-neutral-400">
                 Your procurement intake and weighbridge verification have been completed.
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs border-t border-slate-100 dark:border-slate-800">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs border-t border-slate-100 dark:border-neutral-800">
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400 block">{t('dashboard.token', 'Token')}</span>
+                  <span className="text-slate-500 dark:text-neutral-400 block">{t('dashboard.token', 'Token')}</span>
                   <span className="font-bold text-slate-900 dark:text-white text-sm">{booking.token}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400 block">{t('dashboard.centre', 'Centre')}</span>
+                  <span className="text-slate-500 dark:text-neutral-400 block">{t('dashboard.centre', 'Centre')}</span>
                   <span className="font-bold text-slate-900 dark:text-white text-sm truncate block">{booking.centreName}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400 block">{t('dashboard.crop', 'Crop')}</span>
+                  <span className="text-slate-500 dark:text-neutral-400 block">{t('dashboard.crop', 'Crop')}</span>
                   <span className="font-bold text-slate-900 dark:text-white text-sm">{booking.cropName}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 dark:text-slate-400 block">{t('dashboard.quantity', 'Quantity')}</span>
+                  <span className="text-slate-500 dark:text-neutral-400 block">{t('dashboard.quantity', 'Quantity')}</span>
                   <span className="font-bold text-slate-900 dark:text-white text-sm">{booking.quantityQuintals} Quintal</span>
                 </div>
               </div>
@@ -880,7 +889,7 @@ export const FarmerDashboard: React.FC = () => {
 
           {/* STATE: WAITING / CHECKED IN (Section 7 & 10) */}
           {(currentStatus === 'WAITING' || currentStatus === 'CHECKED_IN') && (
-            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-4 shadow-xs">
+            <div className="rounded-2xl border border-slate-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 sm:p-6 space-y-4 shadow-xs">
               {/* Centre Delay Alert (Section 10) */}
               {telemetry?.activeDelay?.isActive && (
                 <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs">
@@ -897,7 +906,7 @@ export const FarmerDashboard: React.FC = () => {
               )}
 
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
                   {t('dashboard.liveQueue', 'LIVE QUEUE')}
                 </span>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
@@ -906,32 +915,32 @@ export const FarmerDashboard: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-900/60 border border-slate-100 dark:border-neutral-800">
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-neutral-400 block">
                     {t('dashboard.position', 'Position')}
                   </span>
                   <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                     #{telemetry?.position ?? 1}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-900/60 border border-slate-100 dark:border-neutral-800">
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-neutral-400 block">
                     {t('dashboard.farmersAhead', 'Farmers Ahead')}
                   </span>
                   <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                     {telemetry?.farmersAhead ?? 0}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-900/60 border border-slate-100 dark:border-neutral-800">
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-neutral-400 block">
                     {t('dashboard.estimatedWait', 'Estimated Wait')}
                   </span>
                   <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                     {telemetry?.formattedWaitTime || '~35 min'}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-neutral-900/60 border border-slate-100 dark:border-neutral-800">
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-neutral-400 block">
                     {t('dashboard.centre', 'Centre')}
                   </span>
                   <span className="text-xs font-bold text-slate-900 dark:text-white truncate block mt-1">
@@ -940,7 +949,7 @@ export const FarmerDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 text-right pt-1">
+              <div className="text-[11px] text-slate-500 dark:text-neutral-400 text-right pt-1">
                 {t('dashboard.lastUpdated', 'Last Updated')}:{' '}
                 {telemetry?.lastUpdated
                   ? new Date(telemetry.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -951,19 +960,19 @@ export const FarmerDashboard: React.FC = () => {
 
           {/* STATE: BEFORE CHECK-IN (Section 8) */}
           {currentStatus === 'BOOKED' && (
-            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-3 shadow-xs">
+            <div className="rounded-2xl border border-slate-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 sm:p-6 space-y-3 shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
                   {t('dashboard.liveQueue', 'LIVE QUEUE')}
                 </span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-neutral-900 text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-neutral-700">
                   {t('dashboard.awaitingArrival', 'Awaiting Check-in')}
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 text-center space-y-2">
-                <Clock className="h-6 w-6 text-slate-400 dark:text-slate-500 mx-auto" />
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 max-w-md mx-auto">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-neutral-900/50 border border-slate-200/80 dark:border-neutral-800 text-center space-y-2">
+                <Clock className="h-6 w-6 text-slate-400 dark:text-neutral-500 mx-auto" />
+                <p className="text-sm font-medium text-slate-700 dark:text-neutral-300 max-w-md mx-auto">
                   {t(
                     'dashboard.notCheckedInNotice',
                     'Your queue position will appear after check-in at the procurement centre.'
@@ -982,8 +991,8 @@ export const FarmerDashboard: React.FC = () => {
           )}
 
           {/* 7. PROCUREMENT STATUS (Milestones) */}
-          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs space-y-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+          <div className="rounded-2xl border border-slate-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 sm:p-6 shadow-xs space-y-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 block">
               {t('dashboard.procurementStatus', 'PROCUREMENT STATUS')}
             </span>
 
@@ -1003,7 +1012,7 @@ export const FarmerDashboard: React.FC = () => {
                         ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/40 dark:bg-emerald-950/20'
                         : isActive
                         ? 'border-blue-300 dark:border-blue-700 bg-blue-50/40 dark:bg-blue-950/20 ring-1 ring-blue-400 dark:ring-blue-600'
-                        : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40'
+                        : 'border-slate-100 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900/40'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
@@ -1014,9 +1023,9 @@ export const FarmerDashboard: React.FC = () => {
                       ) : isActive ? (
                         <span className="w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse shrink-0" />
                       ) : (
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-neutral-600 shrink-0" />
                       )}
-                      <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-neutral-500">
                         Step {idx + 1}
                       </span>
                     </div>
@@ -1028,7 +1037,7 @@ export const FarmerDashboard: React.FC = () => {
                           ? 'text-emerald-900 dark:text-emerald-200'
                           : isActive
                           ? 'text-blue-900 dark:text-blue-200'
-                          : 'text-slate-500 dark:text-slate-400'
+                          : 'text-slate-500 dark:text-neutral-400'
                       }`}
                     >
                       {step.title}
@@ -1040,9 +1049,9 @@ export const FarmerDashboard: React.FC = () => {
           </div>
 
           {/* 8. PAYMENT STATUS (Section 12) */}
-          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs space-y-3">
+          <div className="rounded-2xl border border-slate-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 sm:p-6 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400">
                 {t('dashboard.paymentStatus', 'PAYMENT STATUS')}
               </span>
               {/* Simple status badge */}
@@ -1074,7 +1083,7 @@ export const FarmerDashboard: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 pt-1">
               <div>
-                <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                <span className="text-xs text-slate-500 dark:text-neutral-400 block">
                   {t('dashboard.amount', 'Amount')}
                 </span>
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
@@ -1082,9 +1091,9 @@ export const FarmerDashboard: React.FC = () => {
                 </span>
               </div>
               {paymentStatus === 'completed' && (payment?.paymentReference || booking?.paymentReferenceId || procurementRequest?.id) && (
-                <div className="text-xs text-slate-500 dark:text-slate-400 sm:text-right">
+                <div className="text-xs text-slate-500 dark:text-neutral-400 sm:text-right">
                   <span>{t('dashboard.reference', 'Reference')}: </span>
-                  <span className="font-mono text-slate-700 dark:text-slate-300">
+                  <span className="font-mono text-slate-700 dark:text-neutral-300">
                     {payment?.paymentReference || booking?.paymentReferenceId || `DBT-MSP-${(procurementRequest?.id || booking?.id || '').slice(-8)}`}
                   </span>
                 </div>

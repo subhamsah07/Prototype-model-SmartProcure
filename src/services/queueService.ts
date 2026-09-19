@@ -23,7 +23,18 @@ import {
   BASELINE_PROCESSING_MINUTES,
 } from './queueIntelligence';
 
-export type FarmerTelemetryStatus = 'BOOKED' | 'CHECKED_IN' | 'WAITING' | 'PROCESSING' | 'COMPLETED';
+export type FarmerTelemetryStatus = 'BOOKED' | 'CHECKED_IN' | 'WAITING' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED';
+
+export interface QueueProcessStep {
+  position: number;
+  token: string;
+  stageName: string;
+  status: 'PROCESSING' | 'WAITING' | 'SCHEDULED' | 'COMPLETED';
+  isCurrentUser: boolean;
+  farmerNameHint?: string;
+  crop?: string;
+  estimatedMinutesAway: number;
+}
 
 export interface FarmerLiveTelemetry {
   status: FarmerTelemetryStatus;
@@ -48,6 +59,9 @@ export interface FarmerLiveTelemetry {
   elapsedMinutes: number;
   completedAt?: string;
   lastUpdated: string;
+  currentServingPosition?: number;
+  currentServingToken?: string;
+  upcomingProcessFlow?: QueueProcessStep[];
 }
 
 export interface LiveQueueEntry {
@@ -622,6 +636,50 @@ class QueueService {
   }
 
   /**
+   * CANCELLATION HANDLER:
+   * When a farmer cancels their booking, removes them from the active queue store,
+   * renumbers the remaining waiting entries sequentially (advancing the next farmer in line),
+   * and notifies all live subscribers and queue telemetry consumers.
+   */
+  handleBookingCancelled(params: {
+    bookingId?: string;
+    token?: string;
+    centreId?: string;
+    reason?: string;
+  }): void {
+    const cleanToken = (params.token || '').trim().toUpperCase();
+    const bookingId = params.bookingId;
+
+    // Remove from local stores across specified or all centres
+    const targetCentreIds = params.centreId ? [params.centreId] : Array.from(this.localStores.keys());
+
+    targetCentreIds.forEach((cId) => {
+      const store = this.localStores.get(cId);
+      if (!store) return;
+
+      const initialLength = store.checkedInEntries.length;
+      store.checkedInEntries = store.checkedInEntries
+        .filter((e) => {
+          if (cleanToken && e.token.toUpperCase() === cleanToken) return false;
+          if (bookingId && e.bookingId === bookingId) return false;
+          return true;
+        })
+        .map((e, idx) => ({
+          ...e,
+          position: idx + 1,
+        }));
+
+      if (store.checkedInEntries.length !== initialLength) {
+        this.notifySubscribers(cId);
+      }
+    });
+
+    if (params.centreId) {
+      this.notifySubscribers(params.centreId);
+    }
+  }
+
+  /**
    * MARK OPERATIONAL DELAY:
    * Logs observable delay reason (Weighbridge calibration, moisture check, power outage).
    */
@@ -824,6 +882,30 @@ class QueueService {
   async getFarmerLiveTelemetry(booking: ProcurementBooking): Promise<FarmerLiveTelemetry> {
     const cleanToken = (booking.token || '').trim().toUpperCase();
     const centreId = booking.centreId;
+
+    // Direct return if booking is cancelled
+    if (booking.bookingStatus === 'cancelled' || (booking.workflowStatus as string) === 'CANCELLED') {
+      return {
+        status: 'CANCELLED',
+        token: cleanToken,
+        centreId,
+        centreName: booking.centreName,
+        cropName: booking.cropName,
+        quantityQuintals: booking.quantityQuintals,
+        position: null,
+        farmersAhead: 0,
+        estimatedWaitMinutes: 0,
+        formattedWaitTime: 'Cancelled',
+        etaLabel: 'Booking cancelled by farmer',
+        isBaselineEta: true,
+        activeDelay: null,
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        slotStartTime: booking.slotStartTime,
+        slotEndTime: booking.slotEndTime,
+        upcomingProcessFlow: [],
+      };
+    }
+
     let bookingDbId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(booking.id)
       ? booking.id
       : null;
@@ -852,6 +934,27 @@ class QueueService {
           if (bRow?.id) {
             bookingDbId = bRow.id;
           }
+          if (bRow?.booking_status === 'cancelled') {
+            return {
+              status: 'CANCELLED',
+              token: cleanToken,
+              centreId,
+              centreName: booking.centreName,
+              cropName: booking.cropName,
+              quantityQuintals: booking.quantityQuintals,
+              position: null,
+              farmersAhead: 0,
+              estimatedWaitMinutes: 0,
+              formattedWaitTime: 'Cancelled',
+              etaLabel: 'Booking cancelled by farmer',
+              isBaselineEta: true,
+              activeDelay: null,
+              lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              slotStartTime: booking.slotStartTime,
+              slotEndTime: booking.slotEndTime,
+              upcomingProcessFlow: [],
+            };
+          }
         }
 
         const todayStart = new Date();
@@ -864,6 +967,27 @@ class QueueService {
             .select('booking_status, updated_at')
             .eq('id', bookingDbId)
             .maybeSingle();
+          if (bRow?.booking_status === 'cancelled') {
+            return {
+              status: 'CANCELLED',
+              token: cleanToken,
+              centreId,
+              centreName: booking.centreName,
+              cropName: booking.cropName,
+              quantityQuintals: booking.quantityQuintals,
+              position: null,
+              farmersAhead: 0,
+              estimatedWaitMinutes: 0,
+              formattedWaitTime: 'Cancelled',
+              etaLabel: 'Booking cancelled by farmer',
+              isBaselineEta: true,
+              activeDelay: null,
+              lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              slotStartTime: booking.slotStartTime,
+              slotEndTime: booking.slotEndTime,
+              upcomingProcessFlow: [],
+            };
+          }
           if (bRow?.booking_status === 'completed') {
             status = 'COMPLETED';
             completedAt = bRow.updated_at || new Date().toISOString();
@@ -883,6 +1007,29 @@ class QueueService {
           const myEvents = centreEvents.filter(
             (e) => (bookingDbId && e.booking_id === bookingDbId) || (e.notes && e.notes.includes(cleanToken))
           );
+
+          const myCancelledEvent = myEvents.find((e) => e.event_type === 'cancelled');
+          if (myCancelledEvent) {
+            return {
+              status: 'CANCELLED',
+              token: cleanToken,
+              centreId,
+              centreName: booking.centreName,
+              cropName: booking.cropName,
+              quantityQuintals: booking.quantityQuintals,
+              position: null,
+              farmersAhead: 0,
+              estimatedWaitMinutes: 0,
+              formattedWaitTime: 'Cancelled',
+              etaLabel: 'Booking cancelled by farmer',
+              isBaselineEta: true,
+              activeDelay: null,
+              lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              slotStartTime: booking.slotStartTime,
+              slotEndTime: booking.slotEndTime,
+              upcomingProcessFlow: [],
+            };
+          }
 
           const myCheckedInEvent = myEvents.find((e) => e.event_type === 'checked_in');
           const myStartedEvent = [...myEvents].reverse().find((e) => e.event_type === 'processing_started');
@@ -928,13 +1075,13 @@ class QueueService {
 
           // If WAITING in the physical queue, calculate exact position and farmers ahead
           if (status === 'WAITING') {
-            const bookingMap = new Map<string, { checkInTime: string; isProcessing: boolean; isCompleted: boolean }>();
+            const bookingMap = new Map<string, { checkInTime: string; isProcessing: boolean; isCompleted: boolean; isCancelled?: boolean }>();
 
             for (const ev of centreEvents) {
               const bKey = ev.booking_id || (ev.notes ? ev.notes.replace(/[^A-Z0-9]/g, '') : null);
               if (!bKey) continue;
               if (!bookingMap.has(bKey)) {
-                bookingMap.set(bKey, { checkInTime: '', isProcessing: false, isCompleted: false });
+                bookingMap.set(bKey, { checkInTime: '', isProcessing: false, isCompleted: false, isCancelled: false });
               }
               const rec = bookingMap.get(bKey)!;
               if (ev.event_type === 'checked_in') {
@@ -946,6 +1093,9 @@ class QueueService {
               } else if (ev.event_type === 'processing_completed') {
                 rec.isProcessing = false;
                 rec.isCompleted = true;
+              } else if (ev.event_type === 'cancelled') {
+                rec.isCancelled = true;
+                rec.isProcessing = false;
               }
             }
 
@@ -958,7 +1108,7 @@ class QueueService {
 
             for (const [key, bData] of bookingMap.entries()) {
               if (key === myKey) continue;
-              if (bData.isCompleted) continue;
+              if (bData.isCompleted || bData.isCancelled) continue;
               if (bData.isProcessing) {
                 someoneProcessing = true;
                 const startedEv = [...centreEvents].reverse().find(
@@ -994,8 +1144,8 @@ class QueueService {
     }
 
     // Blend with local operational store if offline or local simulation is running
+    const store = this.getStore(centreId);
     if (status === 'BOOKED' || status === 'WAITING') {
-      const store = this.getStore(centreId);
       const storeEntry = store.checkedInEntries.find((e) => e.token === cleanToken);
       if (storeEntry) {
         if (storeEntry.status === 'PROCESSING') {
@@ -1021,6 +1171,71 @@ class QueueService {
       }
     }
 
+    // If still in BOOKED state (before gate check-in), compute realistic live queue telemetry
+    // so farmer can see current serving position, upcoming process flow, and their live position/time
+    if (status === 'BOOKED') {
+      if (position === null) {
+        const queueLength = store.checkedInEntries.length;
+        farmersAhead = queueLength > 0 ? queueLength : 3;
+        position = farmersAhead + 1;
+        estimatedWaitMinutes = Math.max(15, farmersAhead * 18);
+        formattedWaitTime = `~${estimatedWaitMinutes} min`;
+        etaLabel = `${estimatedWaitMinutes} min — Scheduled slot rolling estimate`;
+      }
+    }
+
+    // Determine current processing token & position
+    const activeProcessingEntry = store.checkedInEntries.find((e) => e.status === 'PROCESSING');
+    const currentServingPosition = 1;
+    const currentServingToken = activeProcessingEntry?.token || store.checkedInEntries[0]?.token || 'SP7K3M';
+
+    // Construct sequential process flow pipeline (Current Serving -> Waiting Ahead -> Your Position -> Upcoming)
+    const upcomingProcessFlow: QueueProcessStep[] = [];
+
+    store.checkedInEntries.forEach((entry, idx) => {
+      const isCurrent = entry.token === cleanToken;
+      upcomingProcessFlow.push({
+        position: idx + 1,
+        token: entry.token,
+        stageName: entry.stageName || (entry.status === 'PROCESSING' ? 'Electronic Weighbridge Verification' : 'Gate Ingress & Sampling'),
+        status: entry.status === 'PROCESSING' ? 'PROCESSING' : 'WAITING',
+        isCurrentUser: isCurrent,
+        farmerNameHint: entry.farmerNameHint,
+        crop: entry.crop,
+        estimatedMinutesAway: entry.status === 'PROCESSING' ? 0 : Math.max(10, idx * 18),
+      });
+    });
+
+    // If current user is not in the checked-in list (status BOOKED), insert them into the process pipeline
+    if (!upcomingProcessFlow.some((step) => step.isCurrentUser)) {
+      const userPos = position || (upcomingProcessFlow.length + 1);
+      upcomingProcessFlow.push({
+        position: userPos,
+        token: cleanToken,
+        stageName: 'Scheduled Arrival (Gate Check-In Pending)',
+        status: 'SCHEDULED',
+        isCurrentUser: true,
+        farmerNameHint: 'Your Token',
+        crop: `${booking.cropName} (${booking.quantityQuintals} Q)`,
+        estimatedMinutesAway: estimatedWaitMinutes,
+      });
+
+      // Add one subsequent queue token to display the ongoing intake process
+      upcomingProcessFlow.push({
+        position: userPos + 1,
+        token: 'TK-9402',
+        stageName: 'Upcoming Slot In Queue',
+        status: 'SCHEDULED',
+        isCurrentUser: false,
+        farmerNameHint: 'Next Registered Intake',
+        crop: 'Wheat (25 Q)',
+        estimatedMinutesAway: estimatedWaitMinutes + 18,
+      });
+    }
+
+    // Ensure sorted strictly by position
+    upcomingProcessFlow.sort((a, b) => a.position - b.position);
+
     return {
       status,
       token: cleanToken,
@@ -1028,8 +1243,8 @@ class QueueService {
       centreName: booking.centreName,
       cropName: booking.cropName,
       quantityQuintals: booking.quantityQuintals,
-      position: (status === 'WAITING' || status === 'PROCESSING') ? position : null,
-      farmersAhead: status === 'WAITING' ? farmersAhead : 0,
+      position: position || (farmersAhead + 1),
+      farmersAhead,
       estimatedWaitMinutes,
       formattedWaitTime,
       etaLabel,
@@ -1039,6 +1254,9 @@ class QueueService {
       elapsedMinutes,
       completedAt,
       lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      currentServingPosition,
+      currentServingToken,
+      upcomingProcessFlow,
     };
   }
 

@@ -13,7 +13,7 @@ export const Footer: React.FC<FooterProps> = ({ darkMode = false }) => {
   return (
     <footer
       className={`border-t transition-colors duration-200 py-8 px-4 sm:px-6 ${
-        darkMode ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-600'
+        darkMode ? 'bg-black border-neutral-800 text-neutral-400' : 'bg-white border-slate-200 text-slate-600'
       }`}
     >
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
@@ -21,7 +21,7 @@ export const Footer: React.FC<FooterProps> = ({ darkMode = false }) => {
         <div className="flex items-center gap-3">
           <SmartProcureLogo size={28} />
           <div className="flex items-center gap-2">
-            <span className={`font-bold tracking-tight text-sm ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>
+            <span className={`font-bold tracking-tight text-sm ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               Smart<span className="text-emerald-600 dark:text-emerald-400">Procure</span>
             </span>
             <span className="opacity-40">•</span>
@@ -35,8 +35,8 @@ export const Footer: React.FC<FooterProps> = ({ darkMode = false }) => {
         {/* Team & Contact Email */}
         <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">{t('landing.teamLabel', 'Team')}:</span>
-            <span className={`font-semibold tracking-wide ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+            <span className={darkMode ? 'text-neutral-400' : 'text-slate-400'}>{t('landing.teamLabel', 'Team')}:</span>
+            <span className={`font-semibold tracking-wide ${darkMode ? 'text-white' : 'text-slate-800'}`}>
               {t('landing.teamName', 'INNOVEX')}
             </span>
           </div>

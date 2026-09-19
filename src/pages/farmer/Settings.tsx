@@ -280,16 +280,16 @@ export const SettingsPage: React.FC = () => {
 
                 {/* State Dropdown */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-slate-700">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300">
                     State Jurisdiction (Determines Active MSP Rate)
                   </label>
                   <select
                     value={state}
                     onChange={(e) => setState(e.target.value as IndianState)}
-                    className="flex h-11 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="flex h-11 w-full rounded-lg border border-slate-300 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 px-3.5 py-2 text-sm text-slate-900 dark:text-neutral-100 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     {INDIAN_STATES.map((st) => (
-                      <option key={st} value={st}>
+                      <option key={st} value={st} className="bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100">
                         {st}
                       </option>
                     ))}
@@ -308,39 +308,39 @@ export const SettingsPage: React.FC = () => {
                 {/* Email (Read-only managed via Supabase Auth) */}
                 <div className="sm:col-span-2 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="block text-sm font-medium text-slate-700">Email Address</label>
-                    <span className="text-[11px] text-slate-500 font-medium">Managed via Supabase Auth</span>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300">Email Address</label>
+                    <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-medium">Managed via Supabase Auth</span>
                   </div>
                   <input
                     type="email"
                     disabled
                     value={email}
-                    className="flex h-11 w-full rounded-lg border border-slate-200 bg-slate-100 px-3.5 py-2 text-sm text-slate-600 cursor-not-allowed"
+                    className="flex h-11 w-full rounded-lg border border-slate-200 dark:border-neutral-800 bg-slate-100 dark:bg-neutral-900 px-3.5 py-2 text-sm text-slate-600 dark:text-neutral-400 cursor-not-allowed"
                   />
                 </div>
               </div>
 
               {/* Bank Details Display */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-700 font-bold">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-neutral-900/80 border border-slate-200 dark:border-neutral-800 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-700 dark:text-neutral-300 font-bold">
                   <span className="flex items-center gap-1.5">
-                    <CreditCard className="h-4 w-4 text-emerald-700" />
+                    <CreditCard className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
                     Verified Direct Benefit Transfer (DBT) Bank Account
                   </span>
-                  <span className="text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded">Active</span>
+                  <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">Active</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs pt-1">
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Bank Name</span>
-                    <span className="font-semibold text-slate-900">{bankAccount.bankName}</span>
+                    <span className="text-slate-400 dark:text-neutral-500 block text-[11px]">Bank Name</span>
+                    <span className="font-semibold text-slate-900 dark:text-neutral-100">{bankAccount.bankName}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Account Number</span>
-                    <span className="font-mono font-semibold text-slate-900">{bankAccount.accountNumber}</span>
+                    <span className="text-slate-400 dark:text-neutral-500 block text-[11px]">Account Number</span>
+                    <span className="font-mono font-semibold text-slate-900 dark:text-neutral-100">{bankAccount.accountNumber}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">IFSC Code</span>
-                    <span className="font-mono font-semibold text-slate-900">{bankAccount.ifscCode}</span>
+                    <span className="text-slate-400 dark:text-neutral-500 block text-[11px]">IFSC Code</span>
+                    <span className="font-mono font-semibold text-slate-900 dark:text-neutral-100">{bankAccount.ifscCode}</span>
                   </div>
                 </div>
               </div>
